@@ -1,4 +1,4 @@
-import videoBg from '../assets/videoballonette.mp4'
+import videoBg from "../assets/VideoBallonette.mp4";
 
 function Hero() {
   return (
