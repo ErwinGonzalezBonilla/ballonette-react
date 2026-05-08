@@ -711,3 +711,149 @@ body::before {
 .carousel-img.active {
   opacity: 1;
 }
+.quote-section {
+    padding: 100px 20px;
+
+    background: transparent;
+
+    background-size: cover;
+    background-position: center;
+
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.quote-overlay {
+    width: 100%;
+    max-width: 1000px;
+
+    background: rgba(255,255,255,0.1);
+
+    backdrop-filter: blur(15px);
+
+    border: 1px solid rgba(255,255,255,0.2);
+
+    border-radius: 25px;
+
+    padding: 50px;
+
+    box-shadow:
+        0 8px 32px rgba(0,0,0,0.3);
+}
+
+.quote-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.quote-header h2 {
+    font-size: 3rem;
+    color: white;
+    margin-bottom: 15px;
+}
+
+.quote-header p {
+    color: rgba(255,255,255,0.8);
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.quote-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.quote-form input,
+.quote-form textarea {
+    width: 100%;
+
+    padding: 16px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,0.15);
+
+    color: white;
+
+    font-size: 1rem;
+
+    outline: none;
+
+    backdrop-filter: blur(5px);
+}
+
+.quote-form input::placeholder,
+.quote-form textarea::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+.quote-form textarea {
+    grid-column: span 2;
+    resize: none;
+}
+
+.quote-form button {
+    grid-column: span 2;
+
+    padding: 18px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #ff4f81;
+
+    color: white;
+
+    font-size: 1rem;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.3s ease;
+}
+
+.quote-form button:hover {
+    background: #ff2e6d;
+    transform: translateY(-2px);
+}
+
+.success-message {
+    background: rgba(0,255,150,0.2);
+
+    color: #7dffbf;
+
+    padding: 15px;
+
+    border-radius: 10px;
+
+    margin-bottom: 20px;
+
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+
+    .quote-overlay {
+        padding: 30px 20px;
+    }
+
+    .quote-header h2 {
+        font-size: 2rem;
+    }
+
+    .quote-form {
+        grid-template-columns: 1fr;
+    }
+
+    .quote-form textarea,
+    .quote-form button {
+        grid-column: span 1;
+    }
+}

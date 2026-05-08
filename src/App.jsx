@@ -5,11 +5,13 @@ import Servicios from './components/Servicios'
 import About from './components/About'
 import Footer from './components/Footer'
 import Pasos from './components/Pasos'
+import QuoteForm from './components/QuoteForm'
 import Galeria from './pages/Galeria'
 import Carousel from './components/Carousel'
 import Login from "./pages/Login"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Admin from "./pages/Admin"
+
 
 function App() {
 
@@ -50,6 +52,7 @@ function App() {
           />
 
           <About />
+          <QuoteForm />
           <Footer />
         </>
       } />
