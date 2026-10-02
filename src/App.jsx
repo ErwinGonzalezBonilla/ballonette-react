@@ -11,7 +11,7 @@ import Carousel from './components/Carousel'
 import Login from "./pages/Login"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Admin from "./pages/Admin"
-
+import BalloonBot from "./components/chatbot/BalloonBot"
 
 function App() {
 
@@ -28,58 +28,63 @@ function App() {
   ]
 
   return (
-    <Routes>
+    <>
+      <Routes>
 
-      {/* HOME */}
-      <Route path="/" element={
-        <>
-          <Navbar />
-          <Hero />
-          <Carousel />
+        {/* HOME */}
+        <Route path="/" element={
+          <>
+            <Navbar />
+            <Hero />
+            <Carousel />
 
-          <Servicios 
-            titulo="Servicios" 
-            data={servicios} 
-            id="servicios"
-          />
+            <Servicios 
+              titulo="Servicios" 
+              data={servicios} 
+              id="servicios"
+            />
 
-          <Pasos />
+            <Pasos />
 
-          <Servicios 
-            titulo="Servicios adicionales" 
-            data={adicionales} 
-            id="adicionales"
-          />
+            <Servicios 
+              titulo="Servicios adicionales" 
+              data={adicionales} 
+              id="adicionales"
+            />
 
-          <About />
-          <QuoteForm />
-          <Footer />
-        </>
-      } />
+            <About />
+            <QuoteForm />
+            <Footer />
+          </>
+        } />
 
-      {/* 🔥 GALERIA DINÁMICA */}
-      <Route path="/galeria/:categoria" element={
-        <>
-          <Navbar />
-          <Galeria />
-          <Footer />
-        </>
-      } />
+        {/* GALERIA */}
+        <Route path="/galeria/:categoria" element={
+          <>
+            <Navbar />
+            <Galeria />
+            <Footer />
+          </>
+        } />
 
-      {/* LOGIN */}
-      <Route path="/admin/login" element={<Login />} />
+        {/* LOGIN */}
+        <Route path="/admin/login" element={<Login />} />
 
-      {/* ADMIN PROTEGIDO */}
-      <Route 
-        path="/admin" 
-        element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        } 
-      />
+        {/* ADMIN */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } 
+        />
 
-    </Routes>
+      </Routes>
+
+      {/* CHATBOT GLOBAL */}
+      <BalloonBot />
+    </>
   )
 }
 

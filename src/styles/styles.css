@@ -857,3 +857,66 @@ body::before {
         grid-column: span 1;
     }
 }
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.admin-card {
+    background: linear-gradient(145deg, #111, #1c1c1c);
+    padding: 25px;
+    border-radius: 20px;
+    color: white;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.4);
+
+    transition: 0.3s ease;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-header h3 {
+    margin: 0;
+}
+
+/* STATUS COLORS */
+
+.status {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+}
+
+.status.pending {
+    background: #ffcc00;
+    color: black;
+}
+
+.status.contacted {
+    background: #00cfff;
+    color: black;
+}
+
+.status.closed {
+    background: #00ff9d;
+    color: black;
+}
+
+.date {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
