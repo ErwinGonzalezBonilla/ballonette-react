@@ -59,8 +59,14 @@ function Navbar() {
           </li>
 
           <li>
+            <span onClick={() => goToSection("como-funciona")}>
+              Cómo funciona
+            </span>
+          </li>
+
+          <li>
             <span onClick={() => goToSection("about")}>
-              About us
+              Quiénes somos
             </span>
           </li>
 

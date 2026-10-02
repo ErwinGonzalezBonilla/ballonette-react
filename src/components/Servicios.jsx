@@ -1,54 +1,48 @@
-import { useEffect } from 'react'
+import { useEffect } from "react"
 import { Link } from "react-router-dom"
 
-function Servicios({ titulo, data, id }) {
-
+function Servicios({ titulo, subtitulo, data, id }) {
   useEffect(() => {
     const cards = document.querySelectorAll(`#${id} .card`)
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("show")
-        }
-      })
-    }, { threshold: 0.15 })
-
-    cards.forEach(card => observer.observe(card))
-
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("show")
+        })
+      },
+      { threshold: 0.15 }
+    )
+    cards.forEach((card) => observer.observe(card))
     return () => observer.disconnect()
   }, [id])
 
   return (
     <section className="servicios" id={id}>
-
-      <h2 className="section-title">{titulo}</h2>
+      <div className="section-head">
+        <h2 className="section-title">{titulo}</h2>
+        {subtitulo && <p className="section-sub">{subtitulo}</p>}
+      </div>
 
       <div className="servicios-grid">
-
-        {data.map((item, index) => (
-          <article className="card" key={index}>
-            <img src={item.imagen} alt={item.titulo} />
-
+        {data.map((item) => (
+          <Link
+            to={`/galeria/${item.slug}`}
+            className="card"
+            key={item.slug}
+          >
+            <img
+              src={item.imagen}
+              alt={item.alt}
+              loading="lazy"
+              style={{ objectPosition: item.posicion || "center" }}
+            />
             <div className="card-content">
-              
-              {/* 🔥 TÍTULO BONITO */}
-              <h3 style={{ textTransform: "capitalize" }}>
-                {item.titulo}
-              </h3>
-
-              {/* 🔥 LINK DINÁMICO CORRECTO */}
-              <Link 
-                to={`/galeria/${item.titulo.toLowerCase()}`} 
-                className="btn-card"
-              >
-                Ver galería
-              </Link>
-
+              <h3>{item.titulo}</h3>
+              <p>{item.descripcion}</p>
+              <span className="card-link">Ver galería</span>
             </div>
-          </article>
+          </Link>
         ))}
-
       </div>
     </section>
   )

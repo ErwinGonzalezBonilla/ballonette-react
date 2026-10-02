@@ -66,6 +66,8 @@ function UploadImage() {
         <option value="cumpleanos">Cumpleaños</option>
         <option value="babyshower">Baby Shower</option>
         <option value="corporativo">Corporativo</option>
+        <option value="flores">Flores</option>
+        <option value="catering">Catering</option>
       </select>
 
       <br /><br />

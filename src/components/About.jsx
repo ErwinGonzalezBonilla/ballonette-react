@@ -8,7 +8,7 @@ function About() {
 
         <div className="about-text">
 
-          <h2>About Us</h2>
+          <h2>Quiénes somos</h2>
 
           <p className="lead">
             Ballonette es una firma creativa especializada en diseño de experiencias para eventos de alto impacto.
