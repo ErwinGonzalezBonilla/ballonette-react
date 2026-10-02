@@ -306,3 +306,209 @@
     animation: none !important;
   }
 }
+
+/* ================= TARJETAS DENTRO DEL CHAT ================= */
+.bot-card {
+  align-self: flex-start;
+  width: 88%;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #f3d9df;
+  box-shadow: 0 4px 14px rgba(180, 120, 140, 0.15);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.bot-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.bot-card-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bot-card p {
+  margin: 0;
+  line-height: 1.45;
+  color: #6d5862;
+}
+
+.bot-card small {
+  color: #9a8790;
+  font-size: 0.78rem;
+}
+
+.bot-card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.bot-card-title strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.bot-card-title span {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* Presupuesto */
+.presupuesto-titulo {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  margin-bottom: 2px;
+}
+
+.presupuesto-linea {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.presupuesto-linea span:last-child {
+  white-space: nowrap;
+}
+
+.presupuesto-linea.total {
+  border-top: 1px solid #f0dfdc;
+  margin-top: 4px;
+  padding-top: 8px;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+/* Consentimiento de datos */
+.bot-card.consentimiento strong {
+  font-size: 0.95rem;
+}
+
+.bot-card.consentimiento p {
+  font-size: 0.8rem;
+}
+
+.bot-card.consentimiento label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bot-card.consentimiento input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.bot-card.consentimiento button {
+  margin-top: 4px;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: white;
+  font: 600 0.88rem var(--font-body);
+  cursor: pointer;
+}
+
+.bot-card.consentimiento button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.bot-card.consentimiento.ok {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #3c7a52;
+  background: #f1faf4;
+  border-color: #cfeedd;
+}
+
+/* Confirmación final */
+.bot-card.confirmacion {
+  background: linear-gradient(135deg, #fff0f5, #fffaf0);
+}
+
+.chat-footer-fin {
+  justify-content: center;
+}
+
+.chat-footer-fin button {
+  flex: 1;
+}
+
+/* Que los mensajes y tarjetas no se aplasten dentro del chat */
+.chat-body > * {
+  flex-shrink: 0;
+}
+
+/* Fotos del catálogo: se ven completas, sin recortar */
+.bot-card.catalogo img,
+.bot-card.opciones img {
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: #fbf5f2;
+}
+
+.bot-card.opciones {
+  width: 94%;
+}
+
+.bot-card.opciones a {
+  display: block;
+  cursor: zoom-in;
+}
+
+.opcion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #f0d5dc;
+  background: #fffafb;
+  border-radius: 12px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.opcion:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: #fff0f5;
+}
+
+.opcion:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.opcion strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.opcion small {
+  font-size: 0.74rem;
+}
+
+.opcion-precio {
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
