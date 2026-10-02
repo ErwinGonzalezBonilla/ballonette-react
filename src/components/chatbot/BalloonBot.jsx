@@ -20,7 +20,7 @@ const FOTOS_PAQUETES = {
 
 const SALUDO = {
   sender: "bot",
-  text: "¡Hola! Soy Balloonbot 🎈 Te ayudo a planificar tu evento. ¿Qué estás celebrando?",
+  text: "¡Hola! Soy Balloonbot 🎈 Te ayudo a planificar tu evento en un par de minutos. ¿Qué estás celebrando y cómo te llamas?",
 }
 
 const SUGERENCIAS = ["Un cumpleaños", "Una boda", "Un baby shower", "Un evento de empresa"]
