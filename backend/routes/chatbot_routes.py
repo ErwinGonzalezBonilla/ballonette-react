@@ -231,10 +231,18 @@ def _presupuesto_desde(args):
 
 
 def _guardar_solicitud(solicitud):
-    """Guarda cada solicitud en un archivo (backend/solicitudes/solicitudes.jsonl)."""
-    CARPETA_SOLICITUDES.mkdir(exist_ok=True)
-    with open(CARPETA_SOLICITUDES / "solicitudes.jsonl", "a", encoding="utf-8") as archivo:
-        archivo.write(json.dumps(solicitud, ensure_ascii=False) + "\n")
+    """Guarda cada solicitud en un archivo (backend/solicitudes/solicitudes.jsonl).
+
+    En Vercel no se pueden guardar archivos de forma permanente: ahí la solicitud
+    llega por email a Katherine (y más adelante se guardará en Google Sheets).
+    """
+    try:
+        CARPETA_SOLICITUDES.mkdir(exist_ok=True)
+        with open(CARPETA_SOLICITUDES / "solicitudes.jsonl", "a", encoding="utf-8") as archivo:
+            archivo.write(json.dumps(solicitud, ensure_ascii=False) + "\n")
+    except OSError as error:
+        print(f"[balloonbot] No se pudo guardar en archivo (normal en Vercel): {error}")
+    print("[balloonbot] Nueva solicitud: " + json.dumps(solicitud, ensure_ascii=False))
 
 
 def ejecutar_herramienta(nombre, args, estado):
