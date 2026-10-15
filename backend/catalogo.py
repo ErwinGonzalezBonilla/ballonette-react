@@ -134,6 +134,8 @@ ELEMENTOS = {
                        "descripcion": "Medio arco + panel de fondo + pedestal para la tarta. Es el Pack Esencial."},
     "arco_completo": {"titulo": "Arco completo (Pack Celebración)", "tipo": "base",
                       "descripcion": "Arco completo + panel de fondo + pedestal. Es el Pack Celebración."},
+    "arco_unicornio": {"titulo": "Arco completo temático (unicornio)", "tipo": "base", "extra": "tematica_impresa",
+                       "descripcion": "Pack Celebración con el panel impreso con un personaje (temática impresa)."},
     "doble_arco": {"titulo": "Doble arco (Pack Doble Impacto)", "tipo": "base",
                    "descripcion": "Doble arco + paneles de fondo + pedestal. Es el Pack Doble Impacto."},
     "totem_halloween": {"titulo": "Tótem de Halloween", "tipo": "adicional", "extra": "totem",
