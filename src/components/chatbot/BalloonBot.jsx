@@ -20,10 +20,9 @@ const FOTOS_PAQUETES = {
 
 const SALUDO = {
   sender: "bot",
-  text: "¡Hola! Soy Balloonbot 🎈 Te ayudo a planificar tu evento en un par de minutos. ¿Qué estás celebrando y cómo te llamas?",
+  text: "¡Hola! 🎈 Bienvenido/a a Ballonette Eventos. Será un placer ayudarte a crear una decoración especial para tu celebración. ¿Cómo te llamas?",
 }
 
-const SUGERENCIAS = ["Un cumpleaños", "Una boda", "Un baby shower", "Un evento de empresa"]
 
 const TEXTO_PRIVACIDAD =
   "Ballonette Eventos (responsable: Katherine Gonzalez) usará tu nombre, teléfono y email solo para gestionar tu solicitud y contactarte sobre tu evento. No se comparten con terceros. Puedes pedir que se borren en cualquier momento escribiendo a katherinegonzalez32@gmail.com."
@@ -51,7 +50,6 @@ function TarjetaOpciones({ tarjeta, onElegir, deshabilitado }) {
               <strong>{p.nombre}</strong>
               <small>{p.medidas}</small>
             </span>
-            <span className="opcion-precio">{p.precio} €</span>
           </button>
         ))}
       </div>
@@ -60,20 +58,24 @@ function TarjetaOpciones({ tarjeta, onElegir, deshabilitado }) {
 }
 
 function TarjetaPaquete({ tarjeta }) {
-  const foto = tarjeta.categoria
-    ? fotoCatalogo(tarjeta.categoria, tarjeta.id)
-    : FOTOS_PAQUETES[tarjeta.id]
+  const foto = !tarjeta.foto
+    ? null
+    : tarjeta.categoria
+      ? fotoCatalogo(tarjeta.categoria, tarjeta.foto)
+      : FOTOS_PAQUETES[tarjeta.foto]
   return (
     <div className={`bot-card paquete ${tarjeta.categoria ? "catalogo" : ""}`}>
       {foto && <img src={foto} alt={tarjeta.nombre} />}
       <div className="bot-card-body">
         <div className="bot-card-title">
           <strong>{tarjeta.nombre}</strong>
-          <span>{tarjeta.precio} €</span>
+          <span>{tarjeta.desde ? "desde " : ""}{tarjeta.precio} €</span>
         </div>
         <p>{tarjeta.incluye}</p>
         {tarjeta.medidas && <small>Medidas: {tarjeta.medidas}</small>}
-        <small>+ transporte · La decoración se adapta a tu temática y colores.</small>
+        <small>
+          {tarjeta.transporte_incluido ? "Transporte incluido" : "+ transporte"} · La decoración se adapta a tu temática y colores.
+        </small>
       </div>
     </div>
   )
@@ -83,18 +85,21 @@ function TarjetaPresupuesto({ tarjeta }) {
   return (
     <div className="bot-card presupuesto">
       <div className="bot-card-body">
-        <strong className="presupuesto-titulo">{tarjeta.titulo || "Tu presupuesto"}</strong>
+        <strong className="presupuesto-titulo">{tarjeta.titulo || "Estimación orientativa"}</strong>
         {tarjeta.lineas.map((linea, i) => (
           <div key={i} className="presupuesto-linea">
             <span>{linea.concepto}</span>
-            <span>{linea.importe} €</span>
+            <span>{linea.importe == null ? "a confirmar" : `${linea.importe} €`}</span>
           </div>
         ))}
         <div className="presupuesto-linea total">
-          <span>Total estimado</span>
-          <span>{tarjeta.total} €</span>
+          <span>Total orientativo</span>
+          <span>{tarjeta.desde ? "desde " : ""}{tarjeta.total} €</span>
         </div>
-        <small>Katherine confirmará la disponibilidad para tu fecha.</small>
+        {tarjeta.pendientes?.length > 0 && (
+          <small>Pendiente de revisar: {tarjeta.pendientes.join(" · ")}</small>
+        )}
+        <small>Precio definitivo y disponibilidad pendientes de confirmación por Katherine.</small>
       </div>
     </div>
   )
@@ -256,7 +261,6 @@ function BalloonBot() {
     setTerminado(false)
   }
 
-  const soloSaludo = messages.length === 1
 
   const renderMensaje = (message, index) => {
     if (message.card) {
@@ -336,16 +340,6 @@ function BalloonBot() {
 
           <div className="chat-body" ref={bodyRef} aria-live="polite">
             {messages.map(renderMensaje)}
-
-            {soloSaludo && !loading && (
-              <div className="chat-suggestions">
-                {SUGERENCIAS.map((s) => (
-                  <button key={s} type="button" onClick={() => sendMessage(s)}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {loading && (
               <div className="message bot typing" aria-label="Balloonbot está escribiendo">

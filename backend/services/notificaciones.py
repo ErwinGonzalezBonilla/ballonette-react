@@ -49,15 +49,22 @@ def _enviar(destinatario, asunto, cuerpo_html, responder_a=None):
 def _tabla_presupuesto(presupuesto):
     filas = "".join(
         f"<tr><td style='padding:6px 0'>{html.escape(l['concepto'])}</td>"
-        f"<td style='padding:6px 0;text-align:right'>{l['importe']} €</td></tr>"
+        f"<td style='padding:6px 0;text-align:right'>{'a confirmar' if l['importe'] is None else str(l['importe']) + ' €'}</td></tr>"
         for l in presupuesto["lineas"]
+    )
+    desde = "desde " if presupuesto.get("desde") else ""
+    pendientes = "".join(f"<li>{html.escape(p)}</li>" for p in presupuesto.get("pendientes") or [])
+    bloque_pendientes = (
+        f"<p style='font-size:13px;margin:12px 0 0'><strong>Pendiente de revisar:</strong></p><ul style='font-size:13px;margin:4px 0'>{pendientes}</ul>"
+        if pendientes else ""
     )
     return (
         "<table style='width:100%;border-collapse:collapse;font-size:15px'>"
         f"{filas}"
-        "<tr><td style='padding-top:10px;border-top:1px solid #eee'><strong>Total estimado</strong></td>"
-        f"<td style='padding-top:10px;border-top:1px solid #eee;text-align:right'><strong>{presupuesto['total']} €</strong></td></tr>"
+        "<tr><td style='padding-top:10px;border-top:1px solid #eee'><strong>Total orientativo</strong></td>"
+        f"<td style='padding-top:10px;border-top:1px solid #eee;text-align:right'><strong>{desde}{presupuesto['total']} €</strong></td></tr>"
         "</table>"
+        f"{bloque_pendientes}"
     )
 
 
@@ -98,14 +105,17 @@ def avisar_a_katherine(solicitud, presupuesto):
 
     contenido = (
         "<p style='margin-top:0'>🎈 <strong>Nueva solicitud desde Balloonbot</strong></p>"
-        f"<p><strong>Responsable:</strong> {s['nombre']}<br>📞 {s['telefono']}<br>✉️ {s['email']}</p>"
+        f"<p><strong>Cliente:</strong> {s['nombre']}<br>📞 {s['telefono']}<br>✉️ {s['email']}</p>"
         f"<p><strong>Evento:</strong> {s['tipo_evento']}<br>"
         f"<strong>Fecha:</strong> {s['fecha']} · <strong>Hora:</strong> {s['hora']}<br>"
-        f"<strong>Lugar:</strong> {s['lugar']}<br>"
-        f"<strong>Invitados:</strong> {s['invitados']}<br>"
-        f"<strong>Presupuesto del cliente:</strong> {s['presupuesto_cliente']}</p>"
-        "<p><strong>Personalización</strong><br>"
-        f"Paquete: {s['paquete']} · Estilo: {s['estilo']}<br>"
+        f"<strong>Lugar:</strong> {s['lugar']} ({s['zona']})<br>"
+        f"<strong>Espacio:</strong> {s['espacio']} · <strong>Medidas:</strong> {s['dimensiones']}<br>"
+        f"<strong>Invitados:</strong> {s['invitados']}</p>"
+        f"<p><strong>Presupuesto máximo del cliente:</strong> {s['presupuesto_cliente']}<br>"
+        f"<strong>Pidió descuento:</strong> {s['descuento_solicitado']}</p>"
+        "<p><strong>Diseño</strong><br>"
+        f"Lo que pidió: {s['tipo_decoracion']}<br>"
+        f"Paquete base: {s['paquete']} · Estilo: {s['estilo']}<br>"
         f"Temática: {s['tematica']} · Colores: {s['colores']}<br>"
         f"Cumpleañero/a, bebé o novios: {s['nombre_homenajeado']} · Edad: {s['edad']}<br>"
         f"Texto del cartel: {s['texto_cartel']}<br>"
@@ -113,7 +123,7 @@ def avisar_a_katherine(solicitud, presupuesto):
         f"<p><strong>Notas:</strong> {s['notas']}</p>"
         f"{_tabla_presupuesto(presupuesto)}"
         f"{boton_wa}"
-        "<p style='font-size:13px;color:#8a7680'>Recuerda confirmar la disponibilidad con el cliente.</p>"
+        "<p style='font-size:13px;color:#8a7680'>Estimación orientativa del bot. Revisa costes pendientes, disponibilidad y precio definitivo antes de confirmar.</p>"
     )
     return _enviar(
         destino,
@@ -136,8 +146,9 @@ def confirmar_al_cliente(solicitud, presupuesto):
         f"<strong>Fecha:</strong> {html.escape(solicitud.get('fecha') or '')}<br>"
         f"<strong>Lugar:</strong> {html.escape(solicitud.get('lugar') or '')}</p>"
         f"{_tabla_presupuesto(presupuesto)}"
-        "<p>Katherine revisará la disponibilidad para tu fecha y te escribirá muy pronto "
-        "para confirmar los detalles. Este presupuesto es orientativo hasta su confirmación.</p>"
+        "<p>Katherine, CEO de Ballonette Eventos, se pondrá en contacto contigo para revisar los detalles, "
+        "confirmar la disponibilidad y concretar el presupuesto definitivo. Esta estimación es orientativa "
+        "hasta su confirmación.</p>"
         "<p>¿Tienes alguna duda? Escríbenos por WhatsApp al +34 689 92 91 08.</p>"
         "<p style='margin-bottom:0'>Con cariño,<br><strong>Ballonette Eventos</strong></p>"
     )
