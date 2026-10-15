@@ -78,6 +78,35 @@ CATEGORIAS = {
     "elegante": "Bodas, cumpleaños de adultos, aniversarios, comuniones y celebraciones elegantes",
 }
 
+# Fotos de referencia que el bot puede enseñar (trabajos reales, en public/assets/web).
+# Para añadir una: sube la foto a public/assets/web y añádela aquí en el tema que encaje.
+REFERENCIAS = {
+    "baby_shower": [
+        {"src": "/assets/web/babyshower-rosa.webp", "titulo": "Baby shower con medio arco y neón"},
+    ],
+    "infantil_tematico": [
+        {"src": "/assets/web/cumple-tematico.webp", "titulo": "Cumpleaños temático de videojuego"},
+        {"src": "/assets/web/babyshower-rosa.webp", "titulo": "Medio arco con letras y peluche"},
+    ],
+    "adultos_elegante": [
+        {"src": "/assets/web/cumple-28.webp", "titulo": "Números gigantes y globos de helio"},
+        {"src": "/assets/web/portada.webp", "titulo": "Arco con flores en rosa y dorado"},
+    ],
+    "numeros_helio": [
+        {"src": "/assets/web/cumple-28.webp", "titulo": "Números gigantes y globos de helio"},
+    ],
+    "empresa_marca": [
+        {"src": "/assets/web/marcas.webp", "titulo": "Columnas de globos para marca"},
+    ],
+    "fiestas_tematicas": [
+        {"src": "/assets/web/halloween.webp", "titulo": "Columna temática de Halloween"},
+        {"src": "/assets/web/cumple-tematico.webp", "titulo": "Decoración temática de personaje"},
+    ],
+    "rosas": [
+        {"src": "/assets/web/ramo-rosas-rojas.webp", "titulo": "Ramo de rosas rojas"},
+    ],
+}
+
 # Suplementos y extras.
 # "orientativo": True = importe provisional que Katherine debe confirmar (coste real desconocido).
 EXTRAS = {

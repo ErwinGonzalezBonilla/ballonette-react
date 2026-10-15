@@ -14,6 +14,8 @@ import smtplib
 import html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+import base64
 from urllib.parse import quote
 
 
@@ -21,19 +23,28 @@ def _configurado():
     return bool(os.getenv("EMAIL_USER") and os.getenv("EMAIL_PASSWORD"))
 
 
-def _enviar(destinatario, asunto, cuerpo_html, responder_a=None):
+def _enviar(destinatario, asunto, cuerpo_html, responder_a=None, imagen=None):
     if not _configurado():
         print(f"[email] Sin configurar. No se envía: {asunto} -> {destinatario}")
         return False
 
     usuario = os.getenv("EMAIL_USER")
-    mensaje = MIMEMultipart("alternative")
+    mensaje = MIMEMultipart("mixed")
     mensaje["Subject"] = asunto
     mensaje["From"] = f"Ballonette Eventos <{usuario}>"
     mensaje["To"] = destinatario
     if responder_a:
         mensaje["Reply-To"] = responder_a
     mensaje.attach(MIMEText(cuerpo_html, "html", "utf-8"))
+    if imagen:
+        try:
+            cabecera, datos = imagen.split(",", 1)
+            subtipo = cabecera.split("/")[1].split(";")[0]
+            adjunto = MIMEImage(base64.b64decode(datos), _subtype=subtipo)
+            adjunto.add_header("Content-Disposition", "attachment", filename=f"foto-referencia.{subtipo.replace('jpeg', 'jpg')}")
+            mensaje.attach(adjunto)
+        except Exception as error:
+            print(f"[email] No se pudo adjuntar la foto: {error}")
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as servidor:
@@ -78,7 +89,7 @@ def _marco(contenido):
     )
 
 
-def avisar_a_katherine(solicitud, presupuesto):
+def avisar_a_katherine(solicitud, presupuesto, imagen=None):
     destino = os.getenv("EMAIL_AVISOS") or os.getenv("EMAIL_USER")
     if not destino:
         print("[email] Sin configurar. No se avisa a Katherine (la solicitud queda guardada).")
@@ -120,16 +131,18 @@ def avisar_a_katherine(solicitud, presupuesto):
         f"Cumpleañero/a, bebé o novios: {s['nombre_homenajeado']} · Edad: {s['edad']}<br>"
         f"Texto del cartel: {s['texto_cartel']}<br>"
         f"Empresa: {s['empresa']}</p>"
-        f"<p><strong>Notas:</strong> {s['notas']}</p>"
+        f"<p><strong>Notas:</strong> {s['notas']}<br>"
+        f"<strong>Foto de referencia:</strong> {s['foto_referencia']}</p>"
         f"{_tabla_presupuesto(presupuesto)}"
         f"{boton_wa}"
         "<p style='font-size:13px;color:#8a7680'>Estimación orientativa del bot. Revisa costes pendientes, disponibilidad y precio definitivo antes de confirmar.</p>"
     )
     return _enviar(
         destino,
-        f"🎈 Nueva solicitud: {solicitud.get('tipo_evento', '')} – {solicitud.get('nombre', '')}",
+        f"🎈 Nueva solicitud: {solicitud.get('tipo_evento') or 'evento'} – {solicitud.get('nombre') or ''}",
         _marco(contenido),
         responder_a=solicitud.get("email") or None,
+        imagen=imagen,
     )
 
 

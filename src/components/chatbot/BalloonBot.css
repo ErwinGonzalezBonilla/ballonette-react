@@ -512,3 +512,49 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Foto de referencia del cliente */
+.chat-footer .chat-foto {
+  padding: 12px;
+  background: #f6e7e5;
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.chat-footer .chat-foto:disabled { opacity: 0.5; cursor: default; }
+.message.con-foto { display: flex; flex-direction: column; gap: 6px; }
+.message .foto-cliente {
+  display: block;
+  max-width: 200px;
+  max-height: 220px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* Fotos de referencia que muestra el bot */
+.bot-card.referencias .referencias-fila {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 10px 0;
+  scroll-snap-type: x mandatory;
+}
+.bot-card.referencias .referencias-fila a {
+  flex: 0 0 132px;
+  scroll-snap-align: start;
+  text-decoration: none;
+  color: var(--ink);
+}
+.bot-card.referencias .referencias-fila img {
+  width: 132px;
+  height: 170px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+.bot-card.referencias .referencias-fila small {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  line-height: 1.25;
+}

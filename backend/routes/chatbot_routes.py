@@ -129,6 +129,26 @@ DESCUENTOS Y RENTABILIDAD
 SOBRE LAS FOTOS
 - Son ejemplos de estilo y tamaño. Colores, temática y elementos se adaptan a cada cliente.
   No prometas exactamente los objetos de una foto.
+- Usa mostrar_referencias para enseñar trabajos reales de Ballonette cuando el cliente no sepa qué
+  quiere, pida ideas o quieras inspirarle (elige el tema que encaje). No la uses en todos los mensajes.
+- Puedes decirle al cliente que, si tiene una foto de lo que le gusta, la envíe con el botón 📷.
+
+CUANDO EL CLIENTE ENVÍA UNA FOTO DE REFERENCIA
+1. Analízala con detalle y descríbela en 1 o 2 frases: tipo de estructura (medio arco, arco completo,
+   doble arco, columnas, números, panel, photocall, gran formato), tamaño aproximado, colores,
+   temática o personaje, y elementos especiales (paneles impresos, figuras o globos especiales,
+   flores, neón, pedestales, mesas, luces, telas).
+2. Tradúcelo al tarifario: elige el paquete más cercano y los extras que apliquen. Lo que no esté en
+   el tarifario (flores naturales, telas, mesas, paneles adicionales, estructuras grandes...) va en
+   pendientes. Si la foto es claramente de gran formato o con varias estructuras, es premium o
+   personalizado, y necesitas medidas.
+3. Si te falta la zona, pregúntala antes de calcular (o calcula con madrid_capital solo si ya sabes
+   que es en Madrid). Luego usa calcular_presupuesto.
+4. Deja claro que es una estimación basada en la foto: "Por lo que veo en tu foto..." y que el
+   resultado se adaptará a sus colores y temática. Katherine confirmará el precio final.
+5. Si la foto no es de una decoración (o no se ve bien), dilo con amabilidad y pide otra.
+6. Nunca digas que podemos copiar exactamente el trabajo de otra empresa: hacemos una versión
+   inspirada en esa idea, con el estilo de Ballonette.
 
 OTRAS REGLAS
 - No confirmes disponibilidad ni reservas. No hables de adelantos ni formas de pago.
@@ -165,6 +185,18 @@ EXTRAS_SCHEMA = {
 }
 
 HERRAMIENTAS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "mostrar_referencias",
+            "description": "Muestra fotos de trabajos reales de Ballonette como inspiración.",
+            "parameters": {
+                "type": "object",
+                "properties": {"tema": {"type": "string", "enum": list(catalogo.REFERENCIAS.keys())}},
+                "required": ["tema"],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -291,6 +323,14 @@ def _guardar_solicitud(solicitud):
 
 def ejecutar_herramienta(nombre, args, estado):
     """Ejecuta una herramienta. Devuelve el resultado para la IA y añade tarjetas para la web."""
+    if nombre == "mostrar_referencias":
+        fotos = catalogo.REFERENCIAS.get(args.get("tema"))
+        if not fotos:
+            return {"error": "Tema no encontrado"}
+        estado["tarjetas"].append({"tipo": "referencias", "fotos": fotos})
+        estado["memoria"].append(f"[Se mostraron fotos de referencia: {args.get('tema')}]")
+        return {"ok": True, "fotos": [f["titulo"] for f in fotos]}
+
     if nombre == "mostrar_opciones":
         categoria = args.get("categoria")
         if categoria not in catalogo.CATEGORIAS:
@@ -382,7 +422,8 @@ def ejecutar_herramienta(nombre, args, estado):
         }
 
         _guardar_solicitud(solicitud)
-        aviso_ok = avisar_a_katherine(solicitud, presupuesto)
+        solicitud["foto_referencia"] = "Adjunta en este email" if estado.get("referencia") else None
+        aviso_ok = avisar_a_katherine(solicitud, presupuesto, imagen=estado.get("referencia"))
         email_cliente_ok = confirmar_al_cliente(solicitud, presupuesto)
 
         estado["tarjetas"].append({"tipo": "presupuesto", "titulo": "Tu estimación inicial", **presupuesto})
@@ -402,13 +443,26 @@ def ejecutar_herramienta(nombre, args, estado):
 
 # ======================= RUTA DEL CHAT =======================
 
+LIMITE_IMAGEN = 3_000_000  # ~2 MB de foto en base64 (la web ya la reduce antes de enviarla)
+
+
+def _imagen_valida(dato):
+    """Acepta solo fotos en formato data URL (JPEG, PNG o WebP) y de tamaño razonable."""
+    if not isinstance(dato, str) or len(dato) > LIMITE_IMAGEN:
+        return None
+    if not dato.startswith(("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")):
+        return None
+    return dato
+
 @chatbot_bp.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json() or {}
     mensaje = (data.get("message") or "").strip()
     historial = data.get("history", [])[-30:]
 
+    imagen = _imagen_valida(data.get("image"))
     estado = {
+        "referencia": _imagen_valida(data.get("reference_image")) or imagen,
         "tarjetas": [],
         "memoria": [],
         "terminado": False,
@@ -423,7 +477,15 @@ def chat():
             texto = f"{texto}\n{m['memo']}"
         if texto:
             mensajes.append({"role": rol, "content": texto})
-    mensajes.append({"role": "user", "content": mensaje})
+    if imagen:
+        mensajes.append({"role": "user", "content": [
+            {"type": "text", "text": (mensaje or "Te envío una foto de referencia.")
+             + "\n[El cliente ha enviado esta foto de referencia. Analízala según las instrucciones.]"},
+            {"type": "image_url", "image_url": {"url": imagen, "detail": "high"}},
+        ]})
+        estado["memoria"].append("[El cliente envió una foto de referencia; mi análisis está en este mensaje]")
+    else:
+        mensajes.append({"role": "user", "content": mensaje})
 
     try:
         # La IA puede usar varias herramientas seguidas antes de responder

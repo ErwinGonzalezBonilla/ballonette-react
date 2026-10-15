@@ -142,6 +142,49 @@ function TarjetaConfirmacion({ tarjeta }) {
   )
 }
 
+/* Reduce la foto del cliente (máx. 1280 px, JPEG) para enviarla rápido */
+function comprimirImagen(archivo, maximo = 1280, calidad = 0.8) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(archivo)
+    const img = new Image()
+    img.onload = () => {
+      const escala = Math.min(1, maximo / Math.max(img.width, img.height))
+      const canvas = document.createElement("canvas")
+      canvas.width = Math.round(img.width * escala)
+      canvas.height = Math.round(img.height * escala)
+      const ctx = canvas.getContext("2d")
+      ctx.fillStyle = "#fff"
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL("image/jpeg", calidad))
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("No se pudo leer la imagen"))
+    }
+    img.src = url
+  })
+}
+
+function TarjetaReferencias({ tarjeta }) {
+  return (
+    <div className="bot-card referencias">
+      <div className="referencias-fila">
+        {tarjeta.fotos.map((f) => (
+          <a key={f.src} href={f.src} target="_blank" rel="noopener noreferrer" title="Ver en grande">
+            <img src={f.src} alt={f.titulo} loading="lazy" />
+            <small>{f.titulo}</small>
+          </a>
+        ))}
+      </div>
+      <div className="bot-card-body">
+        <small>Trabajos reales de Ballonette. Toca una foto para verla en grande.</small>
+      </div>
+    </div>
+  )
+}
+
 /* ---------- Componente principal ---------- */
 
 function BalloonBot() {
@@ -157,6 +200,9 @@ function BalloonBot() {
   const consentRef = useRef(consentimiento)
   const bodyRef = useRef(null)
   const inputRef = useRef(null)
+  const fileRef = useRef(null)
+  // Última foto de referencia del cliente: se reenvía para adjuntarla al aviso a Katherine
+  const referenciaRef = useRef(null)
 
   useEffect(() => {
     messagesRef.current = messages
@@ -187,14 +233,19 @@ function BalloonBot() {
 
   const sendMessage = useCallback(async (text, opciones = {}) => {
     const clean = text.trim()
-    if (clean === "") return
+    if (clean === "" && !opciones.imagen) return
 
     // Solo se envía el texto (y la memoria de precios) al servidor
     const history = messagesRef.current
       .filter((m) => m.text)
       .map((m) => ({ sender: m.sender, text: m.text, memo: m.memo }))
 
-    setMessages((prev) => [...prev, { sender: "user", text: clean }])
+    setMessages((prev) => [
+      ...prev,
+      opciones.imagen
+        ? { sender: "user", text: clean, imagen: opciones.imagen }
+        : { sender: "user", text: clean },
+    ])
     setInput("")
     setLoading(true)
 
@@ -206,6 +257,8 @@ function BalloonBot() {
           message: clean,
           history,
           consent: opciones.consent ?? consentRef.current,
+          image: opciones.imagen || null,
+          reference_image: referenciaRef.current,
         }),
       })
 
@@ -245,6 +298,25 @@ function BalloonBot() {
     return () => window.removeEventListener("balloonbot:open", handleOpen)
   }, [sendMessage])
 
+  const enviarFoto = async (e) => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ""
+    if (!archivo) return
+    if (!archivo.type.startsWith("image/")) return
+    try {
+      const imagen = await comprimirImagen(archivo)
+      referenciaRef.current = imagen
+      const texto = input.trim() || "Te envío una foto de referencia de lo que me gustaría."
+      sendMessage(texto, { imagen })
+    } catch (error) {
+      console.error(error)
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "No he podido abrir esa foto 😕 ¿Puedes probar con otra (JPG o PNG)?" },
+      ])
+    }
+  }
+
   const aceptarConsentimiento = () => {
     setConsentimiento(true)
     sendMessage("He aceptado el uso de mis datos ✅", { consent: true })
@@ -259,6 +331,7 @@ function BalloonBot() {
     setMessages([SALUDO])
     setConsentimiento(false)
     setTerminado(false)
+    referenciaRef.current = null
   }
 
 
@@ -275,6 +348,7 @@ function BalloonBot() {
           />
         )
       }
+      if (card.tipo === "referencias") return <TarjetaReferencias key={index} tarjeta={card} />
       if (card.tipo === "paquete") return <TarjetaPaquete key={index} tarjeta={card} />
       if (card.tipo === "presupuesto") return <TarjetaPresupuesto key={index} tarjeta={card} />
       if (card.tipo === "confirmacion") return <TarjetaConfirmacion key={index} tarjeta={card} />
@@ -291,7 +365,8 @@ function BalloonBot() {
       return null
     }
     return (
-      <div key={index} className={`message ${message.sender}`}>
+      <div key={index} className={`message ${message.sender} ${message.imagen ? "con-foto" : ""}`}>
+        {message.imagen && <img className="foto-cliente" src={message.imagen} alt="Foto de referencia" />}
         {message.text}
       </div>
     )
@@ -363,9 +438,26 @@ function BalloonBot() {
               }}
             >
               <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={enviarFoto}
+              />
+              <button
+                type="button"
+                className="chat-foto"
+                onClick={() => fileRef.current?.click()}
+                disabled={loading}
+                aria-label="Enviar una foto de referencia"
+                title="Enviar una foto de referencia"
+              >
+                📷
+              </button>
+              <input
                 ref={inputRef}
                 type="text"
-                placeholder="Escribe tu mensaje..."
+                placeholder="Escribe o envía una foto 📷"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={loading}
