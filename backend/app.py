@@ -7,6 +7,7 @@ from extensions import db, jwt
 
 from routes.quote_routes import quote_bp
 from routes.chatbot_routes import chatbot_bp
+from routes.cotizador_routes import cotizador_bp
 
 from models.quote_request import QuoteRequest
 
@@ -27,6 +28,7 @@ def create_app():
     # BLUEPRINTS
     app.register_blueprint(quote_bp)
     app.register_blueprint(chatbot_bp)
+    app.register_blueprint(cotizador_bp)
 
     # HOME
     @app.route("/")

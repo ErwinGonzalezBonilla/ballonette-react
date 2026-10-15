@@ -558,3 +558,225 @@
   margin-top: 4px;
   line-height: 1.25;
 }
+
+/* ================= COTIZADOR GUIADO ================= */
+.chat-container.bb-guiado {
+  width: 400px;
+  height: min(640px, calc(100vh - 120px));
+}
+.chat-container.bb-guiado .chat-header button { font-size: 17px; }
+
+.bb-envoltura { display: flex; flex-direction: column; }
+
+/* Barra con la estimación en vivo */
+.bb-barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: #fff4e3;
+  border-bottom: 1px solid #f1dfc0;
+  font-size: 0.82rem;
+  color: #7a5a2e;
+}
+.bb-barra strong { color: var(--accent); font-size: 0.95rem; white-space: nowrap; }
+
+.bb-ancla { display: flex; flex-direction: column; gap: 8px; }
+.bb-paso { display: flex; flex-direction: column; gap: 10px; }
+.bb-nota { color: #9a8790; font-size: 0.78rem; }
+.bb-error { color: #c0392b; font-size: 0.78rem; }
+
+/* Botones de respuesta */
+.bb-botones { display: flex; flex-direction: column; gap: 7px; }
+.bb-botones.bb-botones-fila { flex-direction: row; flex-wrap: wrap; }
+.bb-botones button {
+  text-align: left;
+  border: 1px solid #efcfd8;
+  background: white;
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font: 500 0.9rem var(--font-body);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.bb-botones.bb-botones-fila button { border-radius: 999px; padding: 8px 13px; font-size: 0.84rem; }
+.bb-botones button:hover { border-color: var(--accent); background: #fff3f7; }
+.bb-botones button:active { transform: scale(0.98); }
+.bb-botones button.activo,
+.bb-botones button.principal {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.bb-continuar {
+  align-self: stretch;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: var(--accent);
+  color: white;
+  font: 600 0.92rem var(--font-body);
+  cursor: pointer;
+}
+.bb-continuar:disabled { opacity: 0.45; cursor: default; }
+
+.bb-atras {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #9a8790;
+  font: 500 0.8rem var(--font-body);
+  cursor: pointer;
+  padding: 2px 0;
+}
+.bb-atras:hover { color: var(--accent); }
+
+/* Campos de texto */
+.bb-campos { display: flex; flex-direction: column; gap: 7px; }
+.bb-campos input,
+.bb-campos textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid #e6d3d0;
+  background: white;
+  font: 0.92rem var(--font-body);
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+}
+.bb-campos input:focus,
+.bb-campos textarea:focus { border-color: var(--accent); }
+
+/* Tamaños: carrusel con fotos */
+.bb-carrusel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+}
+.bb-tamano {
+  flex: 0 0 74%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: white;
+  border: 2px solid #f3d9df;
+  border-radius: 16px;
+  padding: 0 0 12px;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.bb-tamano.activo { border-color: var(--accent); }
+.bb-tamano img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: contain;
+  background: #fbf5f2;
+  margin-bottom: 6px;
+}
+.bb-tamano strong,
+.bb-tamano small,
+.bb-tamano .bb-precio { padding: 0 12px; }
+.bb-tamano strong { font-family: var(--font-display); font-size: 1.2rem; }
+.bb-tamano small { color: #9a8790; font-size: 0.76rem; }
+.bb-precio { color: var(--accent); font-weight: 700; }
+.bb-elegir {
+  margin: 6px 12px 0;
+  text-align: center;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fff0f5;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.bb-tamano.activo .bb-elegir,
+.bb-tamano:hover .bb-elegir { background: var(--accent); color: white; }
+
+/* Extras: cuadrícula con fotos */
+.bb-extras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bb-extra { display: flex; flex-direction: column; gap: 4px; }
+.bb-extra > button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: white;
+  border: 2px solid #f3d9df;
+  border-radius: 14px;
+  padding: 0 0 9px;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.bb-extra.activo > button { border-color: var(--accent); background: #fff6f9; }
+.bb-extra img {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  background: white;
+  margin-bottom: 4px;
+}
+.bb-extra-emoji {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 120px;
+  font-size: 2.4rem;
+  background: #fbf5f2;
+  margin-bottom: 4px;
+}
+.bb-extra strong { font-size: 0.8rem; line-height: 1.2; padding: 0 9px; }
+.bb-extra small { font-size: 0.72rem; color: var(--accent); padding: 0 9px; }
+.bb-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: white;
+  border: 1px solid #efcfd8;
+  color: var(--accent);
+  font-weight: 700;
+}
+.bb-extra.activo .bb-check { background: var(--accent); color: white; border-color: var(--accent); }
+.bb-cantidad { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #6d5862; }
+.bb-cantidad input {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e6d3d0;
+  font: inherit;
+}
+
+/* Consentimiento y final */
+.bb-consentimiento { display: flex; gap: 8px; align-items: flex-start; font-size: 0.82rem; color: var(--ink); cursor: pointer; }
+.bb-consentimiento input { margin-top: 3px; accent-color: var(--accent); }
+.bb-consentimiento small { display: block; color: #9a8790; font-size: 0.72rem; margin-top: 3px; }
+.bb-whatsapp { color: #1f9d55; font-weight: 600; font-size: 0.85rem; text-decoration: none; }
+.bb-paso .bot-card { width: 100%; }
+
+@media (max-width: 520px) {
+  .chat-container.bb-guiado { width: auto; height: calc(100vh - 110px); }
+  .bb-tamano { flex-basis: 78%; }
+}
+
+.chat-footer input { min-width: 0; }
+.chat-footer button { flex-shrink: 0; }

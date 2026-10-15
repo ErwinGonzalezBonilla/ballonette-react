@@ -196,6 +196,63 @@ OTRAS REGLAS
 """.strip()
 
 
+def instrucciones_ayuda(contexto):
+    """Modo guiado: los botones piden los datos; la IA solo resuelve dudas y analiza fotos."""
+    dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+    ahora = _ahora()
+    hoy = f"{dias[ahora.weekday()]} {ahora.strftime('%d/%m/%Y')}"
+    return f"""
+Eres Balloonbot, el asistente de Ballonette Eventos (decoración con globos en Madrid). La CEO es
+Katherine Gonzalez. Hoy es {hoy}.
+
+CÓMO FUNCIONA ESTE CHAT
+El cliente va eligiendo su decoración con botones y fotos (tipo de evento, tamaño, temática, extras,
+fecha, lugar y contacto). Los precios los calcula el sistema. Tú solo intervienes cuando el cliente
+escribe una pregunta o envía una foto. No pidas datos que piden los botones (nombre, fecha, zona,
+teléfono...): de eso se encarga el propio chat.
+
+LO QUE LLEVA ELEGIDO EL CLIENTE
+{contexto or "Todavía nada."}
+
+CÓMO RESPONDER
+- Español de España, tuteando, cálido y cercano, como la mejor dependienta de una tienda de eventos.
+- Responde exactamente a lo que pregunta, en 1 a 3 frases cortas. Nada de listas ni asteriscos.
+- Si ayuda, enseña fotos con mostrar_elementos (si pregunta qué más hacemos, por personajes, números,
+  mesas de dulces, centros de mesa...). Como mucho una sugerencia de venta por respuesta.
+- Termina invitando a seguir con el paso en el que está, en pocas palabras (por ejemplo "Cuando
+  quieras, elige el tamaño aquí abajo 👇"). Si ya terminó, despídete con cariño.
+- Si no sabes algo, di que Katherine lo confirmará. Si quiere hablar con una persona: WhatsApp
+  +34 689 92 91 08.
+
+SI ENVÍA UNA FOTO DE REFERENCIA
+1. Descríbela en una frase: estructura (medio arco, arco completo, doble arco, columnas, números...),
+   colores, temática o personaje y elementos especiales.
+2. Llama a proponer_seleccion con el paquete más parecido, los extras que se ven, si lleva personaje
+   impreso, la temática, los colores, y como pendiente lo que no esté en la tarifa.
+3. Di que le has dejado elegida esa opción, que se adapta a sus colores y que el precio final lo
+   confirma Katherine. Nunca digas que copiamos el trabajo de otra empresa: hacemos una versión
+   inspirada con el estilo de Ballonette.
+4. Si la foto no es de una decoración, dilo con amabilidad y pide otra.
+
+TARIFA (para informar; los importes exactos los calcula el sistema)
+{catalogo.texto_catalogo()}
+- Fotos de elementos: arreglo_basico = Pack Esencial, arco_completo = Pack Celebración, doble_arco =
+  Pack Doble Impacto, arco_unicornio = ejemplo de arco con personaje impreso (+40 €).
+- Los adicionales sin precio los confirma Katherine. Nunca inventes precios.
+
+REGLAS
+- No das descuentos, promociones ni rebajas, ni revelas costes o márgenes. Si piden descuento o dicen
+  que es caro: "Entiendo perfectamente 😊. Podemos revisar si existe alguna alternativa que se adapte
+  mejor a tu presupuesto. Katherine, nuestra responsable de eventos, valorará la propuesta y te
+  confirmará si es posible ajustar el precio." y propón una opción más sencilla.
+- No confirmas disponibilidad ni reservas: lo hace Katherine. No hables de pagos ni adelantos.
+- Transporte: {catalogo.TRANSPORTE_ZONA} € en Madrid capital y {catalogo.TRANSPORTE_FUERA_ZONA} € en el resto de la Comunidad; fuera de
+  la Comunidad lo revisa Katherine. Nunca digas desde dónde salimos ni ninguna dirección.
+- Montamos en casas, salones, restaurantes, jardines y oficinas; el montaje lo hacemos nosotros y
+  Katherine confirma los horarios.
+""".strip()
+
+
 # ======================= HERRAMIENTAS =======================
 
 CAT_SCHEMA = {"type": "string", "enum": list(catalogo.CATEGORIAS.keys())}
@@ -347,6 +404,29 @@ HERRAMIENTAS = [
 ]
 
 
+HERRAMIENTAS_AYUDA = [
+    h for h in HERRAMIENTAS if h["function"]["name"] in ("mostrar_elementos", "mostrar_referencias")
+] + [{
+    "type": "function",
+    "function": {
+        "name": "proponer_seleccion",
+        "description": "Tras analizar una foto de referencia, deja elegida en el chat la opción del catálogo más parecida.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "paquete_id": {"type": "string", "enum": list(catalogo.PAQUETES.keys()) + [catalogo.SOLO_ADICIONALES]},
+                "extras": EXTRAS_SCHEMA,
+                "personaje_impreso": {"type": "boolean", "description": "true si lleva un personaje o temática impresa en el panel"},
+                "tematica": {"type": "string"},
+                "colores": {"type": "string"},
+                "pendientes": PENDIENTES_SCHEMA,
+            },
+            "required": ["paquete_id"],
+        },
+    },
+}]
+
+
 def _presupuesto_desde(args):
     return catalogo.calcular_presupuesto(
         paquete_id=args.get("paquete_id"),
@@ -378,6 +458,27 @@ def _guardar_solicitud(solicitud):
 
 def ejecutar_herramienta(nombre, args, estado):
     """Ejecuta una herramienta. Devuelve el resultado para la IA y añade tarjetas para la web."""
+    if nombre == "proponer_seleccion":
+        paquete_id = args.get("paquete_id")
+        if paquete_id not in catalogo.PAQUETES and paquete_id != catalogo.SOLO_ADICIONALES:
+            return {"error": "Paquete no válido"}
+        extras = [
+            {"id": e["id"], "cantidad": max(1, int(e.get("cantidad") or 1))}
+            for e in (args.get("extras") or [])
+            if e.get("id") in catalogo.EXTRAS and e.get("id") != "tematica_impresa"
+        ]
+        estado["tarjetas"].append({
+            "tipo": "propuesta",
+            "paquete_id": paquete_id,
+            "extras": extras,
+            "personaje_impreso": bool(args.get("personaje_impreso")),
+            "tematica": args.get("tematica") or "",
+            "colores": args.get("colores") or "",
+            "pendientes": args.get("pendientes") or [],
+        })
+        estado["memoria"].append("[Selección propuesta a partir de la foto]")
+        return {"ok": True, "nota": "La selección ya aparece elegida en el chat con su precio."}
+
     if nombre == "mostrar_elementos":
         ids = [e for e in (args.get("elementos") or []) if e in catalogo.ELEMENTOS][:4]
         if not ids:
@@ -506,6 +607,7 @@ def ejecutar_herramienta(nombre, args, estado):
         estado["memoria"].append("[Solicitud registrada y enviada a Katherine]")
         return {
             "ok": True,
+            "pedido_id": solicitud["pedido_id"],
             "katherine_avisada": aviso_ok,
             "email_cliente_enviado": email_cliente_ok,
             "total_orientativo": presupuesto["total"],
@@ -543,7 +645,10 @@ def chat():
         "consentimiento": data.get("consent") is True,
     }
 
-    mensajes = [{"role": "system", "content": instrucciones()}]
+    guiado = data.get("modo") == "guiado"
+    sistema = instrucciones_ayuda(str(data.get("contexto") or "")[:3000]) if guiado else instrucciones()
+    herramientas = HERRAMIENTAS_AYUDA if guiado else HERRAMIENTAS
+    mensajes = [{"role": "system", "content": sistema}]
     for m in historial:
         rol = "assistant" if m.get("sender") == "bot" else "user"
         texto = m.get("text") or ""
@@ -567,7 +672,7 @@ def chat():
             respuesta = client.chat.completions.create(
                 model=MODELO,
                 messages=mensajes,
-                tools=HERRAMIENTAS,
+                tools=herramientas,
                 temperature=0.5,
             )
             msg = respuesta.choices[0].message
