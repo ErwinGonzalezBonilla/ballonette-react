@@ -1,0 +1,354 @@
+{
+  "name": "Ballonette 1 · Solicitudes de Balloonbot",
+  "nodes": [
+    {
+      "id": "bbf438db-b1fc-4d08-9c34-b387dd98374e",
+      "name": "Solicitud de Balloonbot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "3721de13-fa79-4c50-b3d9-e97b2b8b94a1",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ballonette-solicitud",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "c2e311e8-cc29-4f09-a2d6-648d24272d4e",
+      "name": "Datos del pedido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// La web ya manda la fila preparada con las mismas columnas de la hoja\nreturn [{ json: $('Solicitud de Balloonbot').first().json.body.fila }];"
+      }
+    },
+    {
+      "id": "5ed9cbeb-bf5e-4815-ae8e-daf6b130723e",
+      "name": "Añadir a la hoja Pedidos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Pedidos"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "21e234c6-8634-4394-9d3c-8d73fb33f19e",
+      "name": "¿Trae foto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "48960237-9931-4b17-b942-af4f667cf94f",
+              "leftValue": "={{ $('Solicitud de Balloonbot').first().json.body.foto_referencia }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cfe8bced-9749-4a53-939f-25ae557f22d7",
+      "name": "Preparar foto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        180
+      ],
+      "parameters": {
+        "jsCode": "// Convierte la foto que manda la web (data URL en base64) en un archivo adjunto\nconst body = $('Solicitud de Balloonbot').first().json.body;\nconst [cabecera, datos] = body.foto_referencia.split(',');\nconst mime = cabecera.slice(5).split(';')[0];\nconst ext = mime.split('/')[1].replace('jpeg', 'jpg');\nconst foto = await this.helpers.prepareBinaryData(Buffer.from(datos, 'base64'), 'foto-referencia.' + ext, mime);\nreturn [{ json: {}, binary: { foto } }];"
+      }
+    },
+    {
+      "id": "4b8ba33c-cbc4-4688-8ae5-cc1bd5b57cdd",
+      "name": "Aviso a Katherine (con foto)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        180
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_katherine }}",
+        "subject": "={{ $('Solicitud de Balloonbot').first().json.body.asunto_katherine }}",
+        "emailType": "html",
+        "message": "={{ $('Solicitud de Balloonbot').first().json.body.html_katherine }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_cliente || $('Solicitud de Balloonbot').first().json.body.email_katherine }}",
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "foto"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "1a226d73-ff06-40f6-a0cf-d7bc047582a3",
+      "name": "Aviso a Katherine",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        420
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_katherine }}",
+        "subject": "={{ $('Solicitud de Balloonbot').first().json.body.asunto_katherine }}",
+        "emailType": "html",
+        "message": "={{ $('Solicitud de Balloonbot').first().json.body.html_katherine }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_cliente || $('Solicitud de Balloonbot').first().json.body.email_katherine }}"
+        }
+      }
+    },
+    {
+      "id": "edb2a31b-77bc-45a2-b662-06f1229f1e66",
+      "name": "¿El cliente dejó email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "bc0006a8-ccca-4e38-9204-bcc6b8d41c8e",
+              "leftValue": "={{ $('Solicitud de Balloonbot').first().json.body.email_cliente }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "276fb4a9-0bb8-4d03-b178-eba94a33df38",
+      "name": "Confirmación al cliente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1560,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_cliente }}",
+        "subject": "={{ $('Solicitud de Balloonbot').first().json.body.asunto_cliente }}",
+        "emailType": "html",
+        "message": "={{ $('Solicitud de Balloonbot').first().json.body.html_cliente }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Solicitud de Balloonbot').first().json.body.email_katherine }}"
+        }
+      }
+    },
+    {
+      "id": "f8ce4adb-c7fa-4d36-9e4a-99439aef552b",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Solicitud de Balloonbot": {
+      "main": [
+        [
+          {
+            "node": "Datos del pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos del pedido": {
+      "main": [
+        [
+          {
+            "node": "Añadir a la hoja Pedidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Añadir a la hoja Pedidos": {
+      "main": [
+        [
+          {
+            "node": "¿Trae foto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Trae foto?": {
+      "main": [
+        [
+          {
+            "node": "Preparar foto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aviso a Katherine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar foto": {
+      "main": [
+        [
+          {
+            "node": "Aviso a Katherine (con foto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso a Katherine (con foto)": {
+      "main": [
+        [
+          {
+            "node": "¿El cliente dejó email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso a Katherine": {
+      "main": [
+        [
+          {
+            "node": "¿El cliente dejó email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿El cliente dejó email?": {
+      "main": [
+        [
+          {
+            "node": "Confirmación al cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmación al cliente": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid"
+  },
+  "pinData": {}
+}

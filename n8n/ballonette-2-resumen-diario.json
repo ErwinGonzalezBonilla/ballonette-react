@@ -1,0 +1,123 @@
+{
+  "name": "Ballonette 2 · Resumen diario para Katherine",
+  "nodes": [
+    {
+      "id": "93b49751-a21e-40c5-ab06-0cf161659acd",
+      "name": "Cada día a las 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0b36f59a-997d-41ba-b075-0f9a7fe010d0",
+      "name": "Leer hoja Pedidos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Pedidos"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8490e92d-c5e7-4447-b751-74cef00f3716",
+      "name": "Preparar resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Prepara el resumen de la mañana para Katherine\nconst filas = $input.all().map(i => i.json);\nconst hoy = new Date(); hoy.setHours(0, 0, 0, 0);\nconst DIA = 86400000;\n\nfunction fecha(texto) {\n  const m = String(texto || '').match(/(\\d{1,2})\\/(\\d{1,2})\\/(\\d{2,4})/);\n  if (!m) return null;\n  const anio = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);\n  return new Date(anio, Number(m[2]) - 1, Number(m[1]));\n}\nconst estado = f => String(f['Estado'] || '').trim().toLowerCase();\nconst fila = f => `<tr><td style=\"padding:6px 8px\">${f['ID'] || ''}</td><td style=\"padding:6px 8px\">${f['Cliente'] || ''}</td>` +\n  `<td style=\"padding:6px 8px\">${f['Tipo de evento'] || ''}</td><td style=\"padding:6px 8px\">${f['Fecha evento'] || ''}</td>` +\n  `<td style=\"padding:6px 8px\">${f['Lugar'] || ''}</td><td style=\"padding:6px 8px\">${f['Paquete'] || ''}</td>` +\n  `<td style=\"padding:6px 8px\">${f['WhatsApp'] ? `<a href=\"${f['WhatsApp']}\">WhatsApp</a>` : (f['Teléfono'] || '')}</td></tr>`;\nconst tabla = lista => `<table style=\"border-collapse:collapse;font-size:14px;width:100%\">` +\n  `<tr style=\"background:#fdf1f3;text-align:left\"><th style=\"padding:6px 8px\">ID</th><th style=\"padding:6px 8px\">Cliente</th><th style=\"padding:6px 8px\">Evento</th><th style=\"padding:6px 8px\">Fecha</th><th style=\"padding:6px 8px\">Lugar</th><th style=\"padding:6px 8px\">Paquete</th><th style=\"padding:6px 8px\">Contacto</th></tr>` +\n  lista.map(fila).join('') + `</table>`;\n\n// 1) Solicitudes sin responder\nconst sinResponder = filas.filter(f => estado(f) === 'nuevo');\n// 2) Eventos reservados en los próximos 7 días\nconst proximos = filas.filter(f => {\n  const d = fecha(f['Fecha evento']);\n  return estado(f) === 'reservado' && d && d >= hoy && (d - hoy) / DIA <= 7;\n}).sort((a, b) => fecha(a['Fecha evento']) - fecha(b['Fecha evento']));\n// 3) Presupuestos enviados hace días sin respuesta (para hacer seguimiento)\nconst seguimiento = filas.filter(f => estado(f) === 'presupuesto enviado');\n\nif (!sinResponder.length && !proximos.length && !seguimiento.length) return [];\n\nlet html = `<div style=\"font-family:Arial,sans-serif;color:#3b2a32\"><h2 style=\"color:#e91e63;margin:0 0 12px\">Buenos días, Katherine 🎈</h2>`;\nif (sinResponder.length) html += `<h3>📩 Solicitudes sin responder (${sinResponder.length})</h3>${tabla(sinResponder)}`;\nif (proximos.length) html += `<h3>📅 Eventos reservados en los próximos 7 días (${proximos.length})</h3>${tabla(proximos)}`;\nif (seguimiento.length) html += `<h3>⏳ Presupuestos enviados pendientes de respuesta (${seguimiento.length})</h3>${tabla(seguimiento)}`;\nhtml += `<p style=\"font-size:13px;color:#8a7680\">Cambia la columna Estado en la hoja Pedidos para que este resumen se actualice.</p></div>`;\n\nconst partes = [];\nif (sinResponder.length) partes.push(`${sinResponder.length} sin responder`);\nif (proximos.length) partes.push(`${proximos.length} eventos esta semana`);\nif (seguimiento.length) partes.push(`${seguimiento.length} por seguir`);\nreturn [{ json: { asunto: `🎈 Resumen Ballonette: ${partes.join(' · ')}`, html } }];"
+      }
+    },
+    {
+      "id": "32a99ac8-f589-4e20-8798-0a4a2b717da7",
+      "name": "Enviar resumen a Katherine",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "katherinegonzalez32@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada día a las 9:00": {
+      "main": [
+        [
+          {
+            "node": "Leer hoja Pedidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer hoja Pedidos": {
+      "main": [
+        [
+          {
+            "node": "Preparar resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar resumen": {
+      "main": [
+        [
+          {
+            "node": "Enviar resumen a Katherine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid"
+  },
+  "pinData": {}
+}

@@ -23,8 +23,8 @@ PAQUETES = {
         "precio": 400,
         "desde": False,
         "foto": "arco_medio",
-        "medidas": "Medio arco de 1,8 a 2 m de ancho",
-        "incluye": "Medio arco de globos, un pedestal para la tarta, una luz LED en el suelo, diseño, preparación y montaje.",
+        "medidas": "Medio arco: unos 2,5 m de ancho y 2 m de alto",
+        "incluye": "Panel de fondo, medio arco de globos, un pedestal para la tarta, una luz LED y cinta LED en el suelo, letrero luminoso de Happy Birthday, diseño, preparación y montaje.",
         "ideal_para": "Espacios pequeños y celebraciones en casa.",
     },
     "celebracion": {
@@ -32,8 +32,8 @@ PAQUETES = {
         "precio": 500,
         "desde": False,
         "foto": "arco_grande",
-        "medidas": "Arco completo de 2,5 a 3 m de ancho",
-        "incluye": "Arco completo de globos con los elementos, dimensiones y montaje definidos por Ballonette.",
+        "medidas": "Arco completo: unos 3 m de ancho y 2,5 m de alto",
+        "incluye": "Panel de fondo, arco completo de globos, un pedestal para la tarta, luz LED y cinta LED en el suelo, diseño, preparación y montaje.",
         "ideal_para": "Decorar la mesa principal y la zona de fotos.",
     },
     "doble_impacto": {
@@ -41,8 +41,8 @@ PAQUETES = {
         "precio": 600,
         "desde": False,
         "foto": "doble_arco",
-        "medidas": "Dos arcos, de 3,5 a 4 m de ancho en total",
-        "incluye": "Decoración con dos arcos de globos y los elementos adicionales del paquete.",
+        "medidas": "Doble arco: unos 3,5 m de ancho y 3 m de alto",
+        "incluye": "Dos paneles de fondo, doble arco de globos, un pedestal para la tarta, luz LED y cinta LED en el suelo, diseño, preparación y montaje.",
         "ideal_para": "Celebraciones con muchos invitados que quieren impresionar.",
     },
     "personalizado": {
@@ -110,10 +110,10 @@ REFERENCIAS = {
 # Suplementos y extras.
 # "orientativo": True = importe provisional que Katherine debe confirmar (coste real desconocido).
 EXTRAS = {
-    "tematica_impresa": {"nombre": "Temática impresa (personaje o imagen en cartón pluma)", "precio": 50, "por_persona": False, "orientativo": False},
+    "tematica_impresa": {"nombre": "Personaje o temática impresa", "precio": 40, "por_persona": False, "orientativo": False},
     "figura_especial": {"nombre": "Globo o figura especial (personaje, número especial)", "precio": 50, "por_persona": False, "orientativo": True},
     "rosas": {"nombre": "Ramo o caja de rosas", "precio": 120, "por_persona": False, "orientativo": False},
-    "neon": {"nombre": "Cartel de neón", "precio": 20, "por_persona": False, "orientativo": False},
+    "neon": {"nombre": "Cartel de neón adicional o personalizado", "precio": 20, "por_persona": False, "orientativo": False},
     "catering": {"nombre": "Catering", "precio": 10, "por_persona": True, "orientativo": False},
 }
 

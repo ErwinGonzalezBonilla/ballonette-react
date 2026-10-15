@@ -8,6 +8,11 @@ Así los precios siempre salen del catálogo (catalogo.py) y nunca se los invent
 import json
 import os
 from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo
+    ZONA_HORARIA = ZoneInfo("Europe/Madrid")
+except Exception:  # si el servidor no tiene zonas horarias, usamos la hora del servidor
+    ZONA_HORARIA = None
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -15,7 +20,7 @@ from flask import Blueprint, request, jsonify
 from openai import OpenAI
 
 import catalogo
-from services.notificaciones import avisar_a_katherine, confirmar_al_cliente
+from services.notificaciones import enviar_solicitud
 
 load_dotenv()
 
@@ -26,11 +31,16 @@ MODELO = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 CARPETA_SOLICITUDES = Path(__file__).resolve().parent.parent / "solicitudes"
 
 
+def _ahora():
+    """Hora de Madrid (Vercel funciona en hora UTC)."""
+    return datetime.now(ZONA_HORARIA) if ZONA_HORARIA else datetime.now()
+
+
 # ======================= INSTRUCCIONES DEL BOT =======================
 
 def instrucciones():
     dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
-    ahora = datetime.now()
+    ahora = _ahora()
     hoy = f"{dias[ahora.weekday()]} {ahora.strftime('%d/%m/%Y')}"
     return f"""
 Eres Balloonbot, el asistente virtual de Ballonette Eventos, una empresa de Madrid que diseña
@@ -89,12 +99,15 @@ TARIFARIO (los importes salen SIEMPRE de calcular_presupuesto, nunca de cabeza)
 
 CÓMO ELEGIR EL PAQUETE
 - Medio arco → esencial (400 €). Arco completo → celebracion (500 €). Dos arcos → doble_impacto (600 €).
-- Temática simple con un panel impreso en cartón pluma: paquete base + tematica_impresa (50 €).
-  Ejemplo: Pack Esencial con temática = desde 450 €. Varios paneles o gran formato: añádelo a
-  pendientes, no lo valores tú.
-- Globo o figura especial de personaje: figura_especial (50 € orientativo) y queda pendiente de
-  verificar el coste real. No confirmes un precio que no conoces.
-- El Pack Celebración no incluye automáticamente paneles, pedestales extra, flores, mesas, luces
+- Si quiere un personaje o temática (impreso en el panel o en cartón pluma): paquete base +
+  tematica_impresa (40 €). Ejemplo: Pack Esencial con su personaje = 440 € + transporte.
+- El Pack Esencial ya incluye panel de fondo y letrero luminoso de Happy Birthday: no cobres neón
+  por ese letrero. El extra neon es solo para un cartel adicional o con otro texto.
+- Varios paneles o gran formato: añádelo a pendientes, no lo valores tú.
+- Cuando el cliente pide "un personaje", usa tematica_impresa (40 €). Usa figura_especial solo si pide
+  expresamente un globo metalizado o una figura grande del personaje (50 € orientativo, pendiente de
+  verificar el coste real). No confirmes un precio que no conoces.
+- Los packs no incluyen automáticamente paneles impresos adicionales, pedestales extra, flores, mesas, luces
   especiales ni globos premium: si los piden, súmalos como extra si existe o ponlos en pendientes.
 - Caballete o estructura de 1,60 m con panel e impresión de nombre, logo o personaje → personalizado
   (desde 900 €, ya incluye transporte y montaje).
@@ -263,7 +276,7 @@ HERRAMIENTAS = [
                     "email": {"type": "string"},
                     "tipo_evento": {"type": "string"},
                     "tipo_decoracion": {"type": "string", "description": "Lo que pidió: medio arco, arco completo, temática, photocall..."},
-                    "fecha": {"type": "string"},
+                    "fecha": {"type": "string", "description": "Fecha del evento en formato DD/MM/AAAA (deduce el año a partir de hoy)"},
                     "hora": {"type": "string"},
                     "lugar": {"type": "string", "description": "Localidad y barrio o zona"},
                     "zona": ZONA_SCHEMA,
@@ -389,8 +402,14 @@ def ejecutar_herramienta(nombre, args, estado):
             return {"error": "Antes de registrar, pregunta al cliente (máximo 2 cosas por mensaje): " + ", ".join(faltan)}
 
         presupuesto = _presupuesto_desde(args)
+        ahora = _ahora()
+        extras_texto = ", ".join(
+            catalogo.EXTRAS[e["id"]]["nombre"] + (f" × {e['cantidad']}" if (e.get("cantidad") or 1) > 1 else "")
+            for e in (args.get("extras") or []) if e.get("id") in catalogo.EXTRAS
+        )
         solicitud = {
-            "fecha_registro": datetime.now().isoformat(timespec="seconds"),
+            "pedido_id": "BAL-" + ahora.strftime("%y%m%d-%H%M%S"),
+            "fecha_registro": ahora.strftime("%d/%m/%Y %H:%M"),
             "nombre": args.get("nombre"),
             "telefono": args.get("telefono"),
             "email": args.get("email"),
@@ -407,6 +426,7 @@ def ejecutar_herramienta(nombre, args, estado):
             "presupuesto_cliente": args.get("presupuesto_cliente"),
             "descuento_solicitado": args.get("descuento_solicitado"),
             "paquete": catalogo.PAQUETES.get(args.get("paquete_id"), {}).get("nombre"),
+            "extras": extras_texto,
             "estilo": catalogo.CATEGORIAS.get(args.get("categoria")),
             "tematica": args.get("tematica"),
             "colores": args.get("colores"),
@@ -423,8 +443,7 @@ def ejecutar_herramienta(nombre, args, estado):
 
         _guardar_solicitud(solicitud)
         solicitud["foto_referencia"] = "Adjunta en este email" if estado.get("referencia") else None
-        aviso_ok = avisar_a_katherine(solicitud, presupuesto, imagen=estado.get("referencia"))
-        email_cliente_ok = confirmar_al_cliente(solicitud, presupuesto)
+        aviso_ok, email_cliente_ok = enviar_solicitud(solicitud, presupuesto, imagen=estado.get("referencia"))
 
         estado["tarjetas"].append({"tipo": "presupuesto", "titulo": "Tu estimación inicial", **presupuesto})
         estado["tarjetas"].append({"tipo": "confirmacion", "nombre": solicitud["nombre"]})

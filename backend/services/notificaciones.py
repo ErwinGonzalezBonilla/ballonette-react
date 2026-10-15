@@ -16,6 +16,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import base64
+import json
+import urllib.request
 from urllib.parse import quote
 
 
@@ -89,12 +91,8 @@ def _marco(contenido):
     )
 
 
-def avisar_a_katherine(solicitud, presupuesto, imagen=None):
-    destino = os.getenv("EMAIL_AVISOS") or os.getenv("EMAIL_USER")
-    if not destino:
-        print("[email] Sin configurar. No se avisa a Katherine (la solicitud queda guardada).")
-        return False
-
+def email_katherine(solicitud, presupuesto):
+    """Devuelve (asunto, html) del aviso a Katherine con todos los datos del pedido."""
     class _Datos(dict):
         def __missing__(self, clave):
             return "—"
@@ -115,7 +113,7 @@ def avisar_a_katherine(solicitud, presupuesto, imagen=None):
     )
 
     contenido = (
-        "<p style='margin-top:0'>🎈 <strong>Nueva solicitud desde Balloonbot</strong></p>"
+        f"<p style='margin-top:0'>🎈 <strong>Nueva solicitud desde Balloonbot</strong> · {s['pedido_id']}</p>"
         f"<p><strong>Cliente:</strong> {s['nombre']}<br>📞 {s['telefono']}<br>✉️ {s['email']}</p>"
         f"<p><strong>Evento:</strong> {s['tipo_evento']}<br>"
         f"<strong>Fecha:</strong> {s['fecha']} · <strong>Hora:</strong> {s['hora']}<br>"
@@ -127,6 +125,7 @@ def avisar_a_katherine(solicitud, presupuesto, imagen=None):
         "<p><strong>Diseño</strong><br>"
         f"Lo que pidió: {s['tipo_decoracion']}<br>"
         f"Paquete base: {s['paquete']} · Estilo: {s['estilo']}<br>"
+        f"Extras: {s['extras']}<br>"
         f"Temática: {s['tematica']} · Colores: {s['colores']}<br>"
         f"Cumpleañero/a, bebé o novios: {s['nombre_homenajeado']} · Edad: {s['edad']}<br>"
         f"Texto del cartel: {s['texto_cartel']}<br>"
@@ -137,37 +136,149 @@ def avisar_a_katherine(solicitud, presupuesto, imagen=None):
         f"{boton_wa}"
         "<p style='font-size:13px;color:#8a7680'>Estimación orientativa del bot. Revisa costes pendientes, disponibilidad y precio definitivo antes de confirmar.</p>"
     )
-    return _enviar(
-        destino,
-        f"🎈 Nueva solicitud: {solicitud.get('tipo_evento') or 'evento'} – {solicitud.get('nombre') or ''}",
-        _marco(contenido),
-        responder_a=solicitud.get("email") or None,
-        imagen=imagen,
+    asunto = (f"🎈 Nueva solicitud {solicitud.get('pedido_id') or ''}: "
+              f"{solicitud.get('tipo_evento') or 'evento'} – {solicitud.get('nombre') or ''} – {solicitud.get('fecha') or ''}")
+    return asunto, _marco(contenido)
+
+
+def avisar_a_katherine(solicitud, presupuesto, imagen=None):
+    destino = os.getenv("EMAIL_AVISOS") or os.getenv("EMAIL_USER")
+    if not destino:
+        print("[email] Sin configurar. No se avisa a Katherine (la solicitud queda guardada).")
+        return False
+    asunto, cuerpo = email_katherine(solicitud, presupuesto)
+    return _enviar(destino, asunto, cuerpo, responder_a=solicitud.get("email") or None, imagen=imagen)
+
+
+def email_cliente(solicitud, presupuesto):
+    """Devuelve (asunto, html) de la confirmación al cliente."""
+    nombre = html.escape(solicitud.get("nombre") or "")
+    contenido = (
+        f"<p style='margin-top:0'>¡Hola {nombre}! 💖</p>"
+        "<p>Hemos recibido tu solicitud y <strong>Katherine ya está al tanto</strong>. "
+        "Te responderá en breve para revisar los detalles contigo. Gracias por confiar en nosotros "
+        "para tu celebración.</p>"
+        f"<p><strong>Evento:</strong> {html.escape(solicitud.get('tipo_evento') or '')}<br>"
+        f"<strong>Fecha:</strong> {html.escape(solicitud.get('fecha') or '')}<br>"
+        f"<strong>Lugar:</strong> {html.escape(solicitud.get('lugar') or '')}</p>"
+        f"{_tabla_presupuesto(presupuesto)}"
+        "<p style='font-size:13px;color:#8a7680'>Esta estimación es orientativa: Katherine confirmará "
+        "la disponibilidad y el presupuesto definitivo.</p>"
+        "<p>¿Tienes alguna duda? Escríbenos por WhatsApp al +34 689 92 91 08.</p>"
+        "<p style='margin-bottom:0'>Con cariño,<br><strong>Ballonette Eventos</strong></p>"
     )
+    return f"Hemos recibido tu solicitud {solicitud.get('pedido_id') or ''} 🎈 Ballonette Eventos", _marco(contenido)
 
 
 def confirmar_al_cliente(solicitud, presupuesto):
     email = solicitud.get("email")
     if not email:
         return False
+    asunto, cuerpo = email_cliente(solicitud, presupuesto)
+    return _enviar(email, asunto, cuerpo, responder_a=os.getenv("EMAIL_AVISOS") or os.getenv("EMAIL_USER"))
 
-    nombre = html.escape(solicitud.get("nombre") or "")
-    contenido = (
-        f"<p style='margin-top:0'>¡Hola {nombre}! 💖</p>"
-        "<p>Hemos recibido tu solicitud. Gracias por confiar en nosotros para tu celebración.</p>"
-        f"<p><strong>Evento:</strong> {html.escape(solicitud.get('tipo_evento') or '')}<br>"
-        f"<strong>Fecha:</strong> {html.escape(solicitud.get('fecha') or '')}<br>"
-        f"<strong>Lugar:</strong> {html.escape(solicitud.get('lugar') or '')}</p>"
-        f"{_tabla_presupuesto(presupuesto)}"
-        "<p>Katherine, CEO de Ballonette Eventos, se pondrá en contacto contigo para revisar los detalles, "
-        "confirmar la disponibilidad y concretar el presupuesto definitivo. Esta estimación es orientativa "
-        "hasta su confirmación.</p>"
-        "<p>¿Tienes alguna duda? Escríbenos por WhatsApp al +34 689 92 91 08.</p>"
-        "<p style='margin-bottom:0'>Con cariño,<br><strong>Ballonette Eventos</strong></p>"
+
+# ======================= n8n =======================
+
+ESTADO_INICIAL = "Nuevo"
+
+
+def _enlace_whatsapp(solicitud):
+    telefono = re.sub(r"\D", "", solicitud.get("telefono") or "")
+    if telefono and not telefono.startswith("34") and len(telefono) == 9:
+        telefono = "34" + telefono
+    return f"https://wa.me/{telefono}" if telefono else ""
+
+
+def fila_hoja(solicitud, presupuesto):
+    """Fila para la hoja "Pedidos" de Google Sheets. Los nombres = cabeceras de la hoja."""
+    def t(clave):
+        valor = solicitud.get(clave)
+        return "" if valor is None else str(valor)
+
+    return {
+        "ID": t("pedido_id"),
+        "Fecha registro": t("fecha_registro"),
+        "Estado": ESTADO_INICIAL,
+        "Cliente": t("nombre"),
+        "Teléfono": t("telefono"),
+        "Email": t("email"),
+        "WhatsApp": _enlace_whatsapp(solicitud),
+        "Tipo de evento": t("tipo_evento"),
+        "Fecha evento": t("fecha"),
+        "Hora": t("hora"),
+        "Lugar": t("lugar"),
+        "Zona": t("zona"),
+        "Espacio": t("espacio"),
+        "Medidas": t("dimensiones"),
+        "Invitados": t("invitados"),
+        "Lo que pidió": t("tipo_decoracion"),
+        "Paquete": t("paquete"),
+        "Extras": t("extras"),
+        "Temática": t("tematica"),
+        "Colores": t("colores"),
+        "Homenajeado": t("nombre_homenajeado"),
+        "Edad": t("edad"),
+        "Texto cartel": t("texto_cartel"),
+        "Empresa": t("empresa"),
+        "Total orientativo (€)": presupuesto.get("total"),
+        "Precio desde": "Sí" if presupuesto.get("desde") else "No",
+        "Pendiente de revisar": "; ".join(presupuesto.get("pendientes") or []),
+        "Presupuesto del cliente": t("presupuesto_cliente"),
+        "Pidió descuento": t("descuento_solicitado"),
+        "Foto de referencia": "Sí (en el email)" if solicitud.get("foto_referencia") else "No",
+        "Notas del cliente": t("notas"),
+    }
+
+def _enviar_a_n8n(solicitud, presupuesto, imagen):
+    """Manda la solicitud al flujo de n8n, que envía los dos emails.
+
+    Devuelve (katherine_avisada, cliente_avisado) o None si n8n no respondió bien.
+    """
+    asunto_k, html_k = email_katherine(solicitud, presupuesto)
+    asunto_c, html_c = email_cliente(solicitud, presupuesto)
+    datos = {
+        "solicitud": solicitud,
+        "presupuesto": presupuesto,
+        "email_katherine": os.getenv("EMAIL_AVISOS") or "katherinegonzalez32@gmail.com",
+        "asunto_katherine": asunto_k,
+        "html_katherine": html_k,
+        "email_cliente": solicitud.get("email") or "",
+        "asunto_cliente": asunto_c,
+        "html_cliente": html_c,
+        "foto_referencia": imagen or "",
+        "fila": fila_hoja(solicitud, presupuesto),
+    }
+    peticion = urllib.request.Request(
+        os.getenv("N8N_WEBHOOK_URL"),
+        data=json.dumps(datos, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Ballonette-Token": os.getenv("N8N_TOKEN", ""),
+        },
+        method="POST",
     )
-    return _enviar(
-        email,
-        "Hemos recibido tu solicitud 🎈 Ballonette Eventos",
-        _marco(contenido),
-        responder_a=os.getenv("EMAIL_AVISOS") or os.getenv("EMAIL_USER"),
+    try:
+        with urllib.request.urlopen(peticion, timeout=25) as respuesta:
+            cuerpo = json.loads(respuesta.read().decode("utf-8") or "{}")
+        print(f"[n8n] Solicitud enviada: {cuerpo}")
+        return True, bool(solicitud.get("email"))
+    except Exception as error:
+        print(f"[n8n] Error enviando la solicitud: {error}")
+        return None
+
+
+def enviar_solicitud(solicitud, presupuesto, imagen=None):
+    """Avisa a Katherine y confirma al cliente.
+
+    Si N8N_WEBHOOK_URL está configurado lo hace n8n; si falla o no está, se usa Gmail directo.
+    Devuelve (katherine_avisada, cliente_avisado).
+    """
+    if os.getenv("N8N_WEBHOOK_URL"):
+        resultado = _enviar_a_n8n(solicitud, presupuesto, imagen)
+        if resultado:
+            return resultado
+    return (
+        avisar_a_katherine(solicitud, presupuesto, imagen=imagen),
+        confirmar_al_cliente(solicitud, presupuesto),
     )

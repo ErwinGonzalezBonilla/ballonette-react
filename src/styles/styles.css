@@ -151,6 +151,10 @@ section{position:relative;padding:clamp(5rem,10vw,8rem) 0}
 
 /* ---------- Tamaños ---------- */
 .tamanos{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6rem}
+.tamanos-estilos{display:flex;gap:.6rem;flex-wrap:wrap;margin:0 0 1.6rem}
+.tamanos-estilos button{font:600 .78rem var(--texto);letter-spacing:.12em;text-transform:uppercase;padding:.6rem 1.1rem;border-radius:999px;border:1px solid var(--oro);background:transparent;color:var(--claro-texto,inherit);cursor:pointer;transition:background .2s,color .2s}
+.tamanos-estilos button.activo,.tamanos-estilos button:hover{background:var(--oro);color:#fff}
+.tamano a{display:block}
 .tamano img{width:100%;aspect-ratio:3/4;object-fit:contain;background:#FBF6F2;border-radius:6px;box-shadow:0 20px 40px -24px rgba(22,6,6,.45)}
 .tamano__meta{display:flex;justify-content:space-between;font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--oro-osc);margin:1.2rem 0 .3rem}
 .tamano h3{font-family:var(--titulo);font-weight:600;font-size:2.5rem;line-height:1;margin:0 0 .5rem}

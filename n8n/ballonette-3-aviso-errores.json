@@ -1,0 +1,55 @@
+{
+  "name": "Ballonette 3 · Aviso si algo falla",
+  "nodes": [
+    {
+      "id": "7c6ee904-34f4-470f-88a4-6cf0cf5814b5",
+      "name": "Cuando falle un flujo",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f6c86b78-3124-4d26-be81-d872daaf7315",
+      "name": "Avisar del error",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "katherinegonzalez32@gmail.com",
+        "subject": "=⚠️ Falló la automatización de Ballonette: {{ $json.workflow.name }}",
+        "emailType": "html",
+        "message": "=<p>Hola Katherine,</p><p>El flujo <strong>{{ $json.workflow.name }}</strong> ha fallado.</p><p><strong>Error:</strong> {{ $json.execution.error.message }}<br><strong>Paso:</strong> {{ $json.execution.lastNodeExecuted }}</p><p><a href=\"{{ $json.execution.url }}\">Ver la ejecución en n8n</a></p><p>Si era una solicitud de un cliente, sus datos están en esa ejecución. Revisa también la hoja Pedidos.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cuando falle un flujo": {
+      "main": [
+        [
+          {
+            "node": "Avisar del error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid"
+  },
+  "pinData": {}
+}
