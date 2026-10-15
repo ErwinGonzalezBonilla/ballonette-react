@@ -91,11 +91,29 @@ FLUJO DE LA CONVERSACIÓN (adáptalo, no lo recites)
     Katherine, CEO de Ballonette Eventos, se pondrá en contacto contigo para revisar los detalles,
     confirmar la disponibilidad y concretar el presupuesto definitivo. ¡Nos encantará ayudarte a crear
     un evento inolvidable!"
-    Si el presupuesto es "desde", di "a partir de [importe] €". No prometas plazos de respuesta.
+    Si el presupuesto es "desde", di "a partir de [importe] €". Si el total es null (nada tiene precio
+    todavía), cambia esa frase por "Katherine te confirmará el precio de lo que has elegido". No prometas plazos de respuesta.
     No hagas más preguntas después del cierre.
 
 TARIFARIO (los importes salen SIEMPRE de calcular_presupuesto, nunca de cabeza)
 {catalogo.texto_catalogo()}
+
+ELEMENTOS ADICIONALES (se suman al paquete base; también se pueden pedir sueltos)
+- totem: tótem o columna decorativa de globos con temática (Halloween, personaje...).
+- logo_empresa: personalización del panel con el logo de la empresa (eventos corporativos).
+- rosas: ramo de rosas para regalo (120 €).
+- ramo_globos: ramo de rosas con globos de corazón.
+- bouquet_globos: ramo de globos con helio.
+- centro_mesa: centros de mesa de globos (pregunta cuántas mesas y usa cantidad).
+- numeros: números gigantes con la edad o la fecha.
+- mesa_dulces: mesa de dulces con pastel, soportes y decoración.
+Los que no tienen precio salen como "precio a confirmar": dilo así y que Katherine dará el importe.
+Nunca inventes su precio. Sugiere como mucho uno que encaje: números en cumpleaños con edad
+redonda, centros de mesa en bodas, comuniones o eventos con mesas, mesa de dulces en infantiles y
+baby showers, logo en empresas, tótem en fiestas temáticas, rosas o bouquet para sorpresas y regalos.
+Si el cliente solo quiere un elemento suelto (por ejemplo un ramo o un bouquet), no le obligues a
+coger un arco: regístralo con paquete_id "solo_adicionales" y explica que Katherine le confirmará el
+precio y si hay un mínimo para ese pedido.
 
 CÓMO ELEGIR EL PAQUETE
 - Medio arco → esencial (400 €). Arco completo → celebracion (500 €). Dos arcos → doble_impacto (600 €).
@@ -142,6 +160,10 @@ DESCUENTOS Y RENTABILIDAD
 SOBRE LAS FOTOS
 - Son ejemplos de estilo y tamaño. Colores, temática y elementos se adaptan a cada cliente.
   No prometas exactamente los objetos de una foto.
+- Usa mostrar_elementos para enseñar las fotos del catálogo de Ballonette (hasta 4 a la vez):
+  los tres arreglos base (arreglo_basico = Pack Esencial, arco_completo = Pack Celebración,
+  doble_arco = Pack Doble Impacto) y los elementos adicionales. Úsala cuando el cliente pregunte
+  qué más hacemos, pida ideas, o cuando ofrezcas un adicional que encaje.
 - Usa mostrar_referencias para enseñar trabajos reales de Ballonette cuando el cliente no sepa qué
   quiere, pida ideas o quieras inspirarle (elige el tema que encaje). No la uses en todos los mensajes.
 - Puedes decirle al cliente que, si tiene una foto de lo que le gusta, la envíe con el botón 📷.
@@ -201,6 +223,24 @@ HERRAMIENTAS = [
     {
         "type": "function",
         "function": {
+            "name": "mostrar_elementos",
+            "description": "Muestra fotos del catálogo de Ballonette: arreglos base y elementos adicionales.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "elementos": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": list(catalogo.ELEMENTOS.keys())},
+                        "maxItems": 4,
+                    }
+                },
+                "required": ["elementos"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "mostrar_referencias",
             "description": "Muestra fotos de trabajos reales de Ballonette como inspiración.",
             "parameters": {
@@ -245,7 +285,7 @@ HERRAMIENTAS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "paquete_id": {"type": "string", "enum": list(catalogo.PAQUETES.keys())},
+                    "paquete_id": {"type": "string", "enum": list(catalogo.PAQUETES.keys()) + [catalogo.SOLO_ADICIONALES]},
                     "extras": EXTRAS_SCHEMA,
                     "zona": ZONA_SCHEMA,
                     "personas_catering": {"type": "integer", "description": "Personas para el catering, si lo pide."},
@@ -285,7 +325,7 @@ HERRAMIENTAS = [
                     "invitados": {"type": "integer"},
                     "presupuesto_cliente": {"type": "string", "description": "Presupuesto máximo que indicó el cliente"},
                     "descuento_solicitado": {"type": "string", "description": "Si pidió descuento o dijo que era caro, qué dijo"},
-                    "paquete_id": {"type": "string", "enum": list(catalogo.PAQUETES.keys())},
+                    "paquete_id": {"type": "string", "enum": list(catalogo.PAQUETES.keys()) + [catalogo.SOLO_ADICIONALES]},
                     "extras": EXTRAS_SCHEMA,
                     "personas_catering": {"type": "integer"},
                     "pendientes": PENDIENTES_SCHEMA,
@@ -336,6 +376,18 @@ def _guardar_solicitud(solicitud):
 
 def ejecutar_herramienta(nombre, args, estado):
     """Ejecuta una herramienta. Devuelve el resultado para la IA y añade tarjetas para la web."""
+    if nombre == "mostrar_elementos":
+        ids = [e for e in (args.get("elementos") or []) if e in catalogo.ELEMENTOS][:4]
+        if not ids:
+            return {"error": "Elementos no encontrados"}
+        estado["tarjetas"].append({
+            "tipo": "referencias",
+            "nota": "Imágenes de ejemplo: se adaptan a tus colores y temática.",
+            "fotos": [{"src": f"/assets/catalogo/elementos/{e}.webp", "titulo": catalogo.ELEMENTOS[e]["titulo"]} for e in ids],
+        })
+        estado["memoria"].append("[Se mostraron fotos de: " + ", ".join(catalogo.ELEMENTOS[e]["titulo"] for e in ids) + "]")
+        return {"ok": True, "mostrados": [catalogo.ELEMENTOS[e] for e in ids]}
+
     if nombre == "mostrar_referencias":
         fotos = catalogo.REFERENCIAS.get(args.get("tema"))
         if not fotos:
@@ -375,7 +427,7 @@ def ejecutar_herramienta(nombre, args, estado):
             estado["memoria"].append(
                 "[Presupuesto mostrado: "
                 + ", ".join(f"{l['concepto']} {_euros(l['importe'])}" for l in presupuesto["lineas"])
-                + f". Total orientativo {'desde ' if presupuesto['desde'] else ''}{presupuesto['total']} €"
+                + (f". Total orientativo {'desde ' if presupuesto['desde'] else ''}{presupuesto['total']} €" if presupuesto["total"] is not None else ". Total a confirmar por Katherine")
                 + (". Pendiente: " + "; ".join(presupuesto["pendientes"]) if presupuesto["pendientes"] else "")
                 + "]"
             )
@@ -425,7 +477,8 @@ def ejecutar_herramienta(nombre, args, estado):
             "invitados": args.get("invitados"),
             "presupuesto_cliente": args.get("presupuesto_cliente"),
             "descuento_solicitado": args.get("descuento_solicitado"),
-            "paquete": catalogo.PAQUETES.get(args.get("paquete_id"), {}).get("nombre"),
+            "paquete": catalogo.PAQUETES.get(args.get("paquete_id"), {}).get("nombre")
+                       or ("Solo elementos adicionales" if args.get("paquete_id") == catalogo.SOLO_ADICIONALES else None),
             "extras": extras_texto,
             "estilo": catalogo.CATEGORIAS.get(args.get("categoria")),
             "tematica": args.get("tematica"),

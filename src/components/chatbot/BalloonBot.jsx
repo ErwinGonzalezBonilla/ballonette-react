@@ -94,7 +94,7 @@ function TarjetaPresupuesto({ tarjeta }) {
         ))}
         <div className="presupuesto-linea total">
           <span>Total orientativo</span>
-          <span>{tarjeta.desde ? "desde " : ""}{tarjeta.total} €</span>
+          <span>{tarjeta.total == null ? "a confirmar" : `${tarjeta.desde ? "desde " : ""}${tarjeta.total} €`}</span>
         </div>
         {tarjeta.pendientes?.length > 0 && (
           <small>Pendiente de revisar: {tarjeta.pendientes.join(" · ")}</small>
@@ -179,7 +179,7 @@ function TarjetaReferencias({ tarjeta }) {
         ))}
       </div>
       <div className="bot-card-body">
-        <small>Trabajos reales de Ballonette. Toca una foto para verla en grande.</small>
+        <small>{tarjeta.nota || "Trabajos reales de Ballonette."} Toca una foto para verla en grande.</small>
       </div>
     </div>
   )

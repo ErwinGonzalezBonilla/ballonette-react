@@ -75,7 +75,7 @@ def _tabla_presupuesto(presupuesto):
         "<table style='width:100%;border-collapse:collapse;font-size:15px'>"
         f"{filas}"
         "<tr><td style='padding-top:10px;border-top:1px solid #eee'><strong>Total orientativo</strong></td>"
-        f"<td style='padding-top:10px;border-top:1px solid #eee;text-align:right'><strong>{desde}{presupuesto['total']} €</strong></td></tr>"
+        f"<td style='padding-top:10px;border-top:1px solid #eee;text-align:right'><strong>{'a confirmar' if presupuesto['total'] is None else f"{desde}{presupuesto['total']} €"}</strong></td></tr>"
         "</table>"
         f"{bloque_pendientes}"
     )

@@ -10,6 +10,9 @@ Después de cambiar algo, súbelo a GitHub (git add, commit, push) y Vercel lo p
 # Pedido mínimo sin transporte: ningún presupuesto baja de aquí
 PEDIDO_MINIMO = 400
 
+# Pedido sin arco (solo un ramo, un bouquet, centros de mesa...): el precio y el mínimo los decide Katherine
+SOLO_ADICIONALES = "solo_adicionales"
+
 # Transporte
 TRANSPORTE_ZONA = 15         # zona habitual: Madrid capital
 TRANSPORTE_FUERA_ZONA = 25   # resto de la Comunidad de Madrid (15 + 10)
@@ -115,6 +118,40 @@ EXTRAS = {
     "rosas": {"nombre": "Ramo o caja de rosas", "precio": 120, "por_persona": False, "orientativo": False},
     "neon": {"nombre": "Cartel de neón adicional o personalizado", "precio": 20, "por_persona": False, "orientativo": False},
     "catering": {"nombre": "Catering", "precio": 10, "por_persona": True, "orientativo": False},
+    # Elementos adicionales del catálogo de fotos. precio None = lo confirma Katherine.
+    "totem": {"nombre": "Tótem o columna decorativa de globos", "precio": None, "por_persona": False, "orientativo": False},
+    "logo_empresa": {"nombre": "Personalización con el logo de la empresa", "precio": None, "por_persona": False, "orientativo": False},
+    "ramo_globos": {"nombre": "Ramo de rosas con globos", "precio": None, "por_persona": False, "orientativo": False},
+    "bouquet_globos": {"nombre": "Bouquet de globos con helio", "precio": None, "por_persona": False, "orientativo": False},
+    "centro_mesa": {"nombre": "Centro de mesa de globos", "precio": None, "por_persona": False, "orientativo": False},
+    "numeros": {"nombre": "Números gigantes con globos", "precio": None, "por_persona": False, "orientativo": False},
+    "mesa_dulces": {"nombre": "Mesa de dulces decorada", "precio": None, "por_persona": False, "orientativo": False},
+}
+
+# Fotos de cada elemento (public/assets/catalogo/elementos). El bot las enseña con mostrar_elementos.
+ELEMENTOS = {
+    "arreglo_basico": {"titulo": "Arreglo básico (Pack Esencial)", "tipo": "base",
+                       "descripcion": "Medio arco + panel de fondo + pedestal para la tarta. Es el Pack Esencial."},
+    "arco_completo": {"titulo": "Arco completo (Pack Celebración)", "tipo": "base",
+                      "descripcion": "Arco completo + panel de fondo + pedestal. Es el Pack Celebración."},
+    "doble_arco": {"titulo": "Doble arco (Pack Doble Impacto)", "tipo": "base",
+                   "descripcion": "Doble arco + paneles de fondo + pedestal. Es el Pack Doble Impacto."},
+    "totem_halloween": {"titulo": "Tótem de Halloween", "tipo": "adicional", "extra": "totem",
+                        "descripcion": "Columna decorativa de globos con temática (Halloween u otra)."},
+    "arreglo_empresa": {"titulo": "Arreglo para empresa", "tipo": "adicional", "extra": "logo_empresa",
+                        "descripcion": "Arco con panel personalizado con el logo de la empresa."},
+    "ramo_rosas": {"titulo": "Ramo de rosas", "tipo": "adicional", "extra": "rosas",
+                   "descripcion": "Ramo de rosas para regalo."},
+    "ramo_con_globos": {"titulo": "Ramo con globos", "tipo": "adicional", "extra": "ramo_globos",
+                        "descripcion": "Ramo de rosas acompañado de globos de corazón."},
+    "bouquet_globos": {"titulo": "Bouquet de globos", "tipo": "adicional", "extra": "bouquet_globos",
+                       "descripcion": "Ramo de globos con helio."},
+    "centro_mesa": {"titulo": "Centro de mesa", "tipo": "adicional", "extra": "centro_mesa",
+                    "descripcion": "Decoración de globos para las mesas de los invitados."},
+    "numeros": {"titulo": "Números", "tipo": "adicional", "extra": "numeros",
+                "descripcion": "Números gigantes con la edad o la fecha, con base de globos."},
+    "mesa_dulces": {"titulo": "Mesa de dulces", "tipo": "adicional", "extra": "mesa_dulces",
+                    "descripcion": "Mesa con pastel, soportes y decoración."},
 }
 
 
@@ -130,6 +167,10 @@ def calcular_presupuesto(paquete_id=None, extras=None, zona="madrid_capital",
     a_revisar = list(pendientes or [])
     desde = False
 
+    solo_adicionales = paquete_id == SOLO_ADICIONALES
+    if solo_adicionales:
+        paquete_id = None
+        a_revisar.append("Pedido sin arco: Katherine confirma el precio y si hay pedido mínimo")
     paquete = PAQUETES.get(paquete_id) if paquete_id else None
     if paquete_id and not paquete:
         errores.append(f"Paquete desconocido: {paquete_id}")
@@ -153,12 +194,17 @@ def calcular_presupuesto(paquete_id=None, extras=None, zona="madrid_capital",
         else:
             cantidad = max(1, int(extra.get("cantidad") or 1))
             nombre = info["nombre"] if cantidad == 1 else f"{info['nombre']} × {cantidad}"
+            if info["precio"] is None:
+                lineas.append({"concepto": nombre + " (precio a confirmar)", "importe": None})
+                a_revisar.append(f"Precio de: {nombre}")
+                desde = True
+                continue
             if info["orientativo"]:
                 nombre += " (orientativo)"
                 a_revisar.append(f"Coste real de: {info['nombre']}")
             lineas.append({"concepto": nombre, "importe": info["precio"] * cantidad})
 
-    subtotal = sum(l["importe"] for l in lineas)
+    subtotal = sum(l["importe"] or 0 for l in lineas)
 
     if paquete and paquete.get("transporte_incluido") and zona != "fuera_comunidad":
         transporte = 0
@@ -172,15 +218,18 @@ def calcular_presupuesto(paquete_id=None, extras=None, zona="madrid_capital",
         lineas.append({"concepto": "Transporte", "importe": transporte})
 
     total = subtotal + (transporte or 0)
+    sin_precio = any(l["importe"] is None and not l["concepto"].startswith("Transporte") for l in lineas)
+    if sin_precio and subtotal == 0:
+        total = None  # nada tiene precio todavía: lo da Katherine
 
     resultado = {
         "lineas": lineas,
         "subtotal_sin_transporte": subtotal,
         "transporte": transporte,
         "total": total,
-        "desde": desde or transporte is None,
+        "desde": desde or solo_adicionales or transporte is None,
         "pendientes": a_revisar,
-        "cumple_minimo": subtotal >= PEDIDO_MINIMO,
+        "cumple_minimo": solo_adicionales or subtotal >= PEDIDO_MINIMO,
         "pedido_minimo": PEDIDO_MINIMO,
         "errores": errores,
     }
@@ -200,6 +249,9 @@ def texto_catalogo():
         partes.append(f"- {pid}: {p['nombre']}, {precio}. {p['medidas']}. Incluye: {p['incluye']} Ideal para: {p['ideal_para']}")
     partes.append("SUPLEMENTOS Y EXTRAS:")
     for eid, e in EXTRAS.items():
+        if e["precio"] is None:
+            partes.append(f"- {eid}: {e['nombre']}, precio a confirmar por Katherine")
+            continue
         unidad = " por persona" if e["por_persona"] else ""
         nota = " (orientativo, pendiente de confirmar el coste real)" if e["orientativo"] else ""
         partes.append(f"- {eid}: {e['nombre']}, {e['precio']} €{unidad}{nota}")
