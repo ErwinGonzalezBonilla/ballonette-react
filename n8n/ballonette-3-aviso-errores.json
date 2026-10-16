@@ -24,7 +24,7 @@
       "parameters": {
         "resource": "message",
         "operation": "send",
-        "sendTo": "katherinegonzalez32@gmail.com",
+        "sendTo": "ballonette.eventos@gmail.com",
         "subject": "=⚠️ Falló la automatización de Ballonette: {{ $json.workflow.name }}",
         "emailType": "html",
         "message": "=<p>Hola Katherine,</p><p>El flujo <strong>{{ $json.workflow.name }}</strong> ha fallado.</p><p><strong>Error:</strong> {{ $json.execution.error.message }}<br><strong>Paso:</strong> {{ $json.execution.lastNodeExecuted }}</p><p><a href=\"{{ $json.execution.url }}\">Ver la ejecución en n8n</a></p><p>Si era una solicitud de un cliente, sus datos están en esa ejecución. Revisa también la hoja Pedidos.</p>",

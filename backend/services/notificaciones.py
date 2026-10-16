@@ -2,9 +2,9 @@
 Envío de emails cuando Balloonbot registra una solicitud.
 
 Usa Gmail. Necesita en backend/.env:
-  EMAIL_USER=katherinegonzalez32@gmail.com
+  EMAIL_USER=ballonette.eventos@gmail.com
   EMAIL_PASSWORD=contraseña de aplicación de Gmail (16 letras)
-  EMAIL_AVISOS=katherinegonzalez32@gmail.com   (a quién llegan los avisos)
+  EMAIL_AVISOS=ballonette.eventos@gmail.com   (a quién llegan los avisos)
 
 Si no están configurados, no se envía nada pero la solicitud se guarda igualmente.
 """
@@ -240,7 +240,7 @@ def _enviar_a_n8n(solicitud, presupuesto, imagen):
     datos = {
         "solicitud": solicitud,
         "presupuesto": presupuesto,
-        "email_katherine": os.getenv("EMAIL_AVISOS") or "katherinegonzalez32@gmail.com",
+        "email_katherine": os.getenv("EMAIL_AVISOS") or "ballonette.eventos@gmail.com",
         "asunto_katherine": asunto_k,
         "html_katherine": html_k,
         "email_cliente": solicitud.get("email") or "",

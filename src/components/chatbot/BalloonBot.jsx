@@ -63,7 +63,7 @@ const PASO_DESCRIPCION = {
 }
 
 const TEXTO_PRIVACIDAD =
-  "Ballonette Eventos (responsable: Katherine Gonzalez) usará tus datos solo para gestionar tu solicitud y contactarte sobre tu evento. No se comparten con terceros. Puedes pedir que se borren escribiendo a katherinegonzalez32@gmail.com."
+  "Ballonette Eventos (responsable: Katherine Gonzalez) usará tus datos solo para gestionar tu solicitud y contactarte sobre tu evento. No se comparten con terceros. Puedes pedir que se borren escribiendo a ballonette.eventos@gmail.com."
 
 const TEXTO_DESCUENTO =
   "Entiendo perfectamente 😊. Podemos revisar si existe alguna alternativa que se adapte mejor a tu presupuesto. Katherine, nuestra responsable de eventos, valorará la propuesta y te confirmará si es posible ajustar el precio."

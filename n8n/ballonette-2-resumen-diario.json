@@ -70,7 +70,7 @@
       "parameters": {
         "resource": "message",
         "operation": "send",
-        "sendTo": "katherinegonzalez32@gmail.com",
+        "sendTo": "ballonette.eventos@gmail.com",
         "subject": "={{ $json.asunto }}",
         "emailType": "html",
         "message": "={{ $json.html }}",
